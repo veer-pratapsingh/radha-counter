@@ -28,7 +28,7 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "bundler": "webpack",
+      "bundler": "metro",
       "pwa": {
         "name": "Radha Counter",
         "themeColor": "#ffffff",
