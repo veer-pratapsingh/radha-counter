@@ -14,7 +14,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
 
-const screenWidth = Dimensions.get("window").width;
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+const isTablet = screenWidth > 768;
+const imageSize = Math.min(screenWidth * 0.7, screenHeight * 0.35, 300);
 
 const presetColors = [
   "#fffaf0",
@@ -123,7 +125,8 @@ export default function App() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      quality: 1,
+      aspect: [1, 1],
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -268,38 +271,38 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   heading: {
-    fontSize: 28,
+    fontSize: isTablet ? 36 : 28,
     fontWeight: "bold",
     textAlign: "center",
-    marginTop: 50,
+    marginTop: screenHeight * 0.06,
     marginBottom: 5,
     color: "#d81b60",
     fontFamily: "serif",
   },
   quote: {
-    fontSize: 18,
+    fontSize: isTablet ? 22 : 18,
     color: "#6a1b9a",
     fontStyle: "italic",
     textAlign: "center",
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginHorizontal: screenWidth * 0.05,
+    marginBottom: screenHeight * 0.02,
     fontFamily: "serif",
   },
   centerArea: { flex: 1, justifyContent: "center", alignItems: "center" },
   image: {
-    width: screenWidth * 0.95,
-    height: screenWidth * 1,
+    width: imageSize,
+    height: imageSize,
     marginBottom: 20,
     borderRadius: 15,
   },
   count: {
-    fontSize: 80,
+    fontSize: isTablet ? 100 : Math.min(screenWidth * 0.2, 80),
     fontWeight: "bold",
     color: "#d81b60",
     textAlign: "center",
   },
   hindiLabel: {
-    fontSize: 28,
+    fontSize: isTablet ? 34 : Math.min(screenWidth * 0.07, 28),
     color: "#880e4f",
     fontWeight: "600",
     marginTop: 5,
@@ -307,27 +310,27 @@ const styles = StyleSheet.create({
     fontFamily: "serif",
   },
   tapButton: {
-    marginTop: 30,
+    marginTop: screenHeight * 0.03,
     backgroundColor: "#d81b60",
-    paddingVertical: 20,
-    paddingHorizontal: 60,
+    paddingVertical: isTablet ? 25 : 20,
+    paddingHorizontal: isTablet ? 80 : 60,
     borderRadius: 50,
     elevation: 3,
   },
   tapButtonText: {
     color: "white",
-    fontSize: 22,
+    fontSize: isTablet ? 26 : 22,
     fontWeight: "bold",
   },
   menuButton: {
     position: "absolute",
-    top: 50,
-    left: 20,
+    top: screenHeight * 0.06,
+    left: screenWidth * 0.05,
     backgroundColor: "#d81b60",
-    padding: 10,
+    padding: isTablet ? 15 : 10,
     borderRadius: 25,
   },
-  menuText: { color: "white", fontSize: 24, fontWeight: "bold" },
+  menuText: { color: "white", fontSize: isTablet ? 28 : 24, fontWeight: "bold" },
   menuOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -335,19 +338,19 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     backgroundColor: "white",
-    width: "80%",
+    width: isTablet ? "60%" : "80%",
     height: "100%",
-    padding: 20,
-    paddingTop: 50,
+    padding: screenWidth * 0.05,
+    paddingTop: screenHeight * 0.06,
   },
   menuTitle: {
-    fontSize: 24,
+    fontSize: isTablet ? 28 : 24,
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
   },
   menuLabel: {
-    fontSize: 18,
+    fontSize: isTablet ? 20 : 18,
     marginBottom: 10,
     fontWeight: "600",
   },
@@ -357,9 +360,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   colorCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: isTablet ? 44 : 36,
+    height: isTablet ? 44 : 36,
+    borderRadius: isTablet ? 22 : 18,
     marginRight: 10,
     marginBottom: 10,
     borderWidth: 2,
@@ -371,7 +374,7 @@ const styles = StyleSheet.create({
   },
   menuButtonLarge: {
     backgroundColor: "#d81b60",
-    padding: 15,
+    padding: isTablet ? 18 : 15,
     borderRadius: 10,
     marginVertical: 10,
   },
@@ -379,7 +382,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
   },
   calendarContainer: {
     flex: 1,
@@ -388,7 +391,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fffaf0",
   },
   selectedDateText: {
-    fontSize: 20,
+    fontSize: isTablet ? 22 : 20,
     marginBottom: 20,
     textAlign: "center",
     color: "#d81b60",
@@ -400,14 +403,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fffaf0",
   },
   namesTitle: {
-    fontSize: 24,
+    fontSize: isTablet ? 28 : 24,
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
     color: "#d81b60",
   },
   nameItem: {
-    fontSize: 18,
+    fontSize: isTablet ? 20 : 18,
     marginBottom: 12,
     color: "#4a148c",
     fontFamily: "serif",
