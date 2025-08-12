@@ -9,24 +9,27 @@ import {
   ScrollView,
   Button,
   Dimensions,
+  Animated,
+  StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const isTablet = screenWidth > 768;
-const imageSize = Math.min(screenWidth * 0.7, screenHeight * 0.35, 300);
+const imageSize = Math.min(screenWidth * 0.6, screenHeight * 0.3, 250);
 
-const presetColors = [
-  "#fffaf0",
-  "#ffe4e1",
-  "#f0fff0",
-  "#e0f7fa",
-  "#fff3e0",
-  "#ede7f6",
-  "#fce4ec",
-  "#e1f5fe",
+const presetGradients = [
+  ["#FFE0B2", "#FFCCBC", "#FFF3E0"], // Warm Orange
+  ["#F8BBD9", "#E1BEE7", "#F3E5F5"], // Pink Purple
+  ["#C8E6C9", "#DCEDC8", "#F1F8E9"], // Green
+  ["#B3E5FC", "#E1F5FE", "#E0F2F1"], // Blue
+  ["#FFCDD2", "#F8BBD9", "#FCE4EC"], // Rose
+  ["#D1C4E9", "#E1BEE7", "#F3E5F5"], // Lavender
+  ["#FFF9C4", "#FFF59D", "#FFFDE7"], // Golden
+  ["#FFCCBC", "#FFAB91", "#FBE9E7"], // Peach
 ];
 
 const radhaNames = [
@@ -63,7 +66,7 @@ const radhaNames = [
 export default function App() {
   const [count, setCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [bgColor, setBgColor] = useState("#fffaf0");
+  const [bgGradient, setBgGradient] = useState(["#FFE0B2", "#FFCCBC", "#FFF3E0"]);
   const [imageUri, setImageUri] = useState(
     "https://upload.wikimedia.org/wikipedia/commons/6/65/Radha_Rani.jpg"
   );
@@ -72,17 +75,37 @@ export default function App() {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [namesVisible, setNamesVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
+  const [scaleAnim] = useState(new Animated.Value(1));
+  const [glowAnim] = useState(new Animated.Value(0));
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     loadData();
+    startGlowAnimation();
   }, []);
+
+  const startGlowAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  };
 
   const loadData = async () => {
     try {
       const savedHistory = await AsyncStorage.getItem("radhaHistory");
       const savedTotal = await AsyncStorage.getItem("radhaTotal");
-      const savedBgColor = await AsyncStorage.getItem("radhaBgColor");
+      const savedBgGradient = await AsyncStorage.getItem("radhaBgGradient");
       const savedImage = await AsyncStorage.getItem("radhaImage");
 
       if (savedHistory) {
@@ -91,18 +114,18 @@ export default function App() {
         setCount(hist[today] || 0);
       }
       if (savedTotal) setTotalCount(parseInt(savedTotal, 10));
-      if (savedBgColor) setBgColor(savedBgColor);
+      if (savedBgGradient) setBgGradient(JSON.parse(savedBgGradient));
       if (savedImage) setImageUri(savedImage);
     } catch (e) {
       console.log("Error loading data", e);
     }
   };
 
-  const saveData = async (updatedHistory, updatedTotal, updatedBgColor, updatedImage) => {
+  const saveData = async (updatedHistory, updatedTotal, updatedBgGradient, updatedImage) => {
     try {
       await AsyncStorage.setItem("radhaHistory", JSON.stringify(updatedHistory));
       await AsyncStorage.setItem("radhaTotal", updatedTotal.toString());
-      await AsyncStorage.setItem("radhaBgColor", updatedBgColor);
+      await AsyncStorage.setItem("radhaBgGradient", JSON.stringify(updatedBgGradient));
       if (updatedImage) await AsyncStorage.setItem("radhaImage", updatedImage);
     } catch (e) {
       console.log("Error saving data", e);
@@ -110,6 +133,20 @@ export default function App() {
   };
 
   const onTap = () => {
+    // Animate button press
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     const newCount = count + 1;
     const newTotal = totalCount + 1;
     const updatedHistory = { ...history, [today]: newCount };
@@ -118,7 +155,7 @@ export default function App() {
     setTotalCount(newTotal);
     setHistory(updatedHistory);
 
-    saveData(updatedHistory, newTotal, bgColor, imageUri);
+    saveData(updatedHistory, newTotal, bgGradient, imageUri);
   };
 
   const pickImage = async () => {
@@ -131,288 +168,649 @@ export default function App() {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      saveData(history, totalCount, bgColor, result.assets[0].uri);
+      saveData(history, totalCount, bgGradient, result.assets[0].uri);
     }
   };
 
-  const changeColor = (color) => {
-    setBgColor(color);
-    saveData(history, totalCount, color, imageUri);
+  const changeGradient = (gradient) => {
+    setBgGradient(gradient);
+    saveData(history, totalCount, gradient, imageUri);
   };
 
   const onDayPress = (day) => {
     setSelectedDate(day.dateString);
   };
 
+  const getMarkedDates = () => {
+    const marked = {};
+    Object.keys(history).forEach(date => {
+      if (history[date] > 0) {
+        marked[date] = {
+          marked: true,
+          dotColor: '#FF6B35',
+          customStyles: {
+            container: {
+              backgroundColor: history[date] > 50 ? '#FFD700' : history[date] > 20 ? '#FFA500' : '#FFE4B5',
+              borderRadius: 15,
+            },
+            text: {
+              color: '#8B4513',
+              fontWeight: 'bold',
+            },
+          },
+        };
+      }
+    });
+    
+    if (selectedDate) {
+      marked[selectedDate] = {
+        ...marked[selectedDate],
+        selected: true,
+        selectedColor: '#FF1744',
+      };
+    }
+    
+    return marked;
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Heading and Quote */}
-      <View>
-        <Text style={styles.heading}>Shri Radha Rani</Text>
-        <Text style={styles.quote}>
-          कृष्णाय वासुदेवाय हरये परमात्मने॥{"\n"}
-          प्रणत: क्लेशनाशाय गोविंदाय नमो नम:॥
-        </Text>
-      </View>
-
-      <View style={styles.centerArea}>
-        <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
-        <Text style={styles.count}>{count}</Text>
-        <Text style={styles.hindiLabel}>राधाकृष्ण</Text>
-
-        {/* Tap Button */}
-        <TouchableOpacity style={styles.tapButton} onPress={onTap} activeOpacity={0.7}>
-          <Text style={styles.tapButtonText}>Tap Here</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Menu Button */}
-      <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
-        <Text style={styles.menuText}>☰</Text>
-      </TouchableOpacity>
-
-      {/* Side Menu */}
-      <Modal visible={menuVisible} animationType="slide" transparent={true}>
-        <View style={styles.menuOverlay}>
-          <View style={styles.menuContainer}>
-            <ScrollView>
-              <Text style={styles.menuTitle}>Settings</Text>
-
-              {/* Background Color */}
-              <Text style={styles.menuLabel}>Change Background Color</Text>
-              <View style={styles.colorRow}>
-                {presetColors.map((color) => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.colorCircle,
-                      { backgroundColor: color },
-                      bgColor === color ? styles.colorSelected : null,
-                    ]}
-                    onPress={() => changeColor(color)}
-                  />
-                ))}
-              </View>
-
-              {/* Change Image */}
-              <TouchableOpacity style={styles.menuButtonLarge} onPress={pickImage}>
-                <Text style={styles.menuButtonText}>Choose Image from Gallery</Text>
-              </TouchableOpacity>
-
-              {/* Show total count */}
-              <Text style={[styles.menuLabel, { marginTop: 30 }]}>Total Taps: {totalCount}</Text>
-
-              {/* Open Calendar */}
-              <TouchableOpacity
-                style={styles.menuButtonLarge}
-                onPress={() => {
-                  setCalendarVisible(true);
-                  setMenuVisible(false);
-                }}
-              >
-                <Text style={styles.menuButtonText}>View Calendar</Text>
-              </TouchableOpacity>
-
-              {/* Radha Rani 28 Names */}
-              <TouchableOpacity
-                style={styles.menuButtonLarge}
-                onPress={() => {
-                  setNamesVisible(true);
-                  setMenuVisible(false);
-                }}
-              >
-                <Text style={styles.menuButtonText}>Radha Rani 28 Names</Text>
-              </TouchableOpacity>
-
-              {/* Close Menu */}
-              <TouchableOpacity style={styles.menuButtonLarge} onPress={() => setMenuVisible(false)}>
-                <Text style={[styles.menuButtonText, { color: "red" }]}>Close Menu</Text>
-              </TouchableOpacity>
-            </ScrollView>
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <LinearGradient colors={bgGradient} style={styles.container}>
+        {/* Divine Header */}
+        <View style={styles.headerContainer}>
+          <View style={styles.omContainer}>
+            <Text style={styles.omSymbol}>ॐ</Text>
+          </View>
+          <Text style={styles.heading}>श्री राधा रानी</Text>
+          <Text style={styles.subtitle}>Divine Counter</Text>
+          <View style={styles.quoteContainer}>
+            <Text style={styles.quote}>
+              कृष्णाय वासुदेवाय हरये परमात्मने॥{"\n"}
+              प्रणत: क्लेशनाशाय गोविंदाय नमो नम:॥
+            </Text>
           </View>
         </View>
-      </Modal>
 
-      {/* Calendar Modal */}
-      <Modal visible={calendarVisible} animationType="slide" transparent={false}>
-        <View style={styles.calendarContainer}>
-          <Calendar
-            onDayPress={onDayPress}
-            markedDates={{
-              [selectedDate]: { selected: true, selectedColor: "#d81b60" },
-            }}
-            style={{ marginBottom: 10 }}
-          />
-          <Text style={styles.selectedDateText}>
-            {selectedDate ? `Taps on ${selectedDate}: ${history[selectedDate] || 0}` : "Select a date"}
-          </Text>
-          <Button title="Close Calendar" onPress={() => setCalendarVisible(false)} />
+        <View style={styles.centerArea}>
+          {/* Divine Image with Glow Effect */}
+          <Animated.View style={[
+            styles.imageContainer,
+            {
+              shadowOpacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 0.8],
+              }),
+            },
+          ]}>
+            <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+          </Animated.View>
+
+          {/* Count Display */}
+          <View style={styles.countContainer}>
+            <Text style={styles.countLabel}>आज का जाप</Text>
+            <Text style={styles.count}>{count}</Text>
+            <Text style={styles.totalLabel}>कुल जाप: {totalCount}</Text>
+          </View>
+
+          <Text style={styles.hindiLabel}>॥ राधे कृष्ण ॥</Text>
+
+          {/* Divine Tap Button */}
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            <TouchableOpacity style={styles.tapButton} onPress={onTap} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['#FF6B35', '#F7931E', '#FFD700']}
+                style={styles.tapButtonGradient}
+              >
+                <Text style={styles.tapButtonText}>🙏 जाप करें 🙏</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
-      </Modal>
 
-      {/* Radha Rani 28 Names Modal */}
-      <Modal visible={namesVisible} animationType="slide" transparent={false}>
-        <View style={styles.namesContainer}>
-          <Text style={styles.namesTitle}>Radha Rani 28 Names</Text>
-          <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-            {radhaNames.map((name) => (
-              <Text key={name} style={styles.nameItem}>
-                {name}
+        {/* Floating Menu Button */}
+        <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+          <LinearGradient colors={['#FF1744', '#E91E63']} style={styles.menuButtonGradient}>
+            <Text style={styles.menuText}>⚙️</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Divine Menu */}
+        <Modal visible={menuVisible} animationType="slide" transparent={true}>
+          <View style={styles.menuOverlay}>
+            <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.menuContainer}>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.menuHeader}>
+                  <Text style={styles.menuTitle}>🔹 सेटिंग्स 🔹</Text>
+                </View>
+
+                {/* Theme Selection */}
+                <Text style={styles.menuLabel}>🎨 Divine Themes</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gradientRow}>
+                  {presetGradients.map((gradient, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.gradientOption}
+                      onPress={() => changeGradient(gradient)}
+                    >
+                      <LinearGradient
+                        colors={gradient}
+                        style={[
+                          styles.gradientCircle,
+                          JSON.stringify(bgGradient) === JSON.stringify(gradient) ? styles.gradientSelected : null,
+                        ]}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Divine Image */}
+                <TouchableOpacity style={styles.menuButtonLarge} onPress={pickImage}>
+                  <LinearGradient colors={['#4CAF50', '#8BC34A']} style={styles.menuButtonGradient}>
+                    <Text style={styles.menuButtonText}>📸 Divine Image</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Stats */}
+                <View style={styles.statsContainer}>
+                  <Text style={styles.statsTitle}>📊 आपकी साधना</Text>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>आज का जाप:</Text>
+                    <Text style={styles.statValue}>{count}</Text>
+                  </View>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>कुल जाप:</Text>
+                    <Text style={styles.statValue}>{totalCount}</Text>
+                  </View>
+                </View>
+
+                {/* Menu Actions */}
+                <TouchableOpacity
+                  style={styles.menuButtonLarge}
+                  onPress={() => {
+                    setCalendarVisible(true);
+                    setMenuVisible(false);
+                  }}
+                >
+                  <LinearGradient colors={['#2196F3', '#03A9F4']} style={styles.menuButtonGradient}>
+                    <Text style={styles.menuButtonText}>📅 Calendar</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.menuButtonLarge}
+                  onPress={() => {
+                    setNamesVisible(true);
+                    setMenuVisible(false);
+                  }}
+                >
+                  <LinearGradient colors={['#9C27B0', '#E91E63']} style={styles.menuButtonGradient}>
+                    <Text style={styles.menuButtonText}>🌸 28 Names</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.menuButtonLarge} onPress={() => setMenuVisible(false)}>
+                  <LinearGradient colors={['#FF5722', '#F44336']} style={styles.menuButtonGradient}>
+                    <Text style={styles.menuButtonText}>❌ Close</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </ScrollView>
+            </LinearGradient>
+          </View>
+        </Modal>
+
+        {/* Divine Calendar */}
+        <Modal visible={calendarVisible} animationType="slide" transparent={false}>
+          <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.calendarContainer}>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>📅 साधना कैलेंडर</Text>
+            </View>
+            <Calendar
+              onDayPress={onDayPress}
+              markedDates={getMarkedDates()}
+              markingType={'custom'}
+              theme={{
+                backgroundColor: 'transparent',
+                calendarBackground: 'transparent',
+                textSectionTitleColor: '#FF6B35',
+                selectedDayBackgroundColor: '#FF1744',
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: '#FF6B35',
+                dayTextColor: '#2d4150',
+                textDisabledColor: '#d9e1e8',
+                dotColor: '#FF6B35',
+                selectedDotColor: '#ffffff',
+                arrowColor: '#FF6B35',
+                monthTextColor: '#FF1744',
+                indicatorColor: '#FF6B35',
+                textDayFontWeight: '600',
+                textMonthFontWeight: 'bold',
+                textDayHeaderFontWeight: '600',
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+                textDayHeaderFontSize: 14
+              }}
+              style={styles.calendar}
+            />
+            <View style={styles.selectedDateContainer}>
+              <Text style={styles.selectedDateText}>
+                {selectedDate ? 
+                  `${selectedDate} को जाप: ${history[selectedDate] || 0}` : 
+                  "📅 तारीख चुनें"
+                }
               </Text>
-            ))}
-          </ScrollView>
-          <Button title="Close" onPress={() => setNamesVisible(false)} />
-        </View>
-      </Modal>
-    </View>
+            </View>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setCalendarVisible(false)}>
+              <LinearGradient colors={['#FF5722', '#F44336']} style={styles.closeButtonGradient}>
+                <Text style={styles.closeButtonText}>बंद करें</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </Modal>
+
+        {/* Divine Names Modal */}
+        <Modal visible={namesVisible} animationType="slide" transparent={false}>
+          <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.namesContainer}>
+            <View style={styles.namesHeader}>
+              <Text style={styles.namesTitle}>🌸 श्री राधा रानी के 28 नाम 🌸</Text>
+            </View>
+            <ScrollView contentContainerStyle={styles.namesScrollContent} showsVerticalScrollIndicator={false}>
+              {radhaNames.map((name, index) => (
+                <View key={name} style={styles.nameItemContainer}>
+                  <View style={styles.nameNumberContainer}>
+                    <Text style={styles.nameNumber}>{index + 1}</Text>
+                  </View>
+                  <Text style={styles.nameItem}>{name.split('. ')[1]}</Text>
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setNamesVisible(false)}>
+              <LinearGradient colors={['#FF5722', '#F44336']} style={styles.closeButtonGradient}>
+                <Text style={styles.closeButtonText}>बंद करें</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </Modal>
+      </LinearGradient>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1,
+    paddingTop: StatusBar.currentHeight || 0,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    paddingTop: screenHeight * 0.02,
+    paddingBottom: screenHeight * 0.01,
+  },
+  omContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 30,
+    padding: 10,
+    marginBottom: 10,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  omSymbol: {
+    fontSize: isTablet ? 32 : 24,
+    color: '#FF6B35',
+    fontWeight: 'bold',
+  },
   heading: {
-    fontSize: isTablet ? 36 : 28,
+    fontSize: isTablet ? 42 : 32,
     fontWeight: "bold",
     textAlign: "center",
-    marginTop: screenHeight * 0.06,
-    marginBottom: 5,
-    color: "#d81b60",
+    color: "#8B4513",
     fontFamily: "serif",
+    textShadowColor: 'rgba(255, 107, 53, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  subtitle: {
+    fontSize: isTablet ? 18 : 14,
+    color: '#FF6B35',
+    fontStyle: 'italic',
+    marginBottom: 10,
+  },
+  quoteContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 15,
+    padding: 15,
+    marginHorizontal: screenWidth * 0.05,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   quote: {
-    fontSize: isTablet ? 22 : 18,
-    color: "#6a1b9a",
+    fontSize: isTablet ? 20 : 16,
+    color: "#8B4513",
     fontStyle: "italic",
     textAlign: "center",
-    marginHorizontal: screenWidth * 0.05,
-    marginBottom: screenHeight * 0.02,
     fontFamily: "serif",
+    lineHeight: isTablet ? 28 : 24,
   },
-  centerArea: { flex: 1, justifyContent: "center", alignItems: "center" },
+  centerArea: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center",
+    paddingHorizontal: screenWidth * 0.05,
+  },
+  imageContainer: {
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 20,
+    elevation: 15,
+    marginBottom: 20,
+  },
   image: {
     width: imageSize,
     height: imageSize,
-    marginBottom: 20,
-    borderRadius: 15,
+    borderRadius: imageSize / 2,
+    borderWidth: 4,
+    borderColor: '#FFD700',
+  },
+  countContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  countLabel: {
+    fontSize: isTablet ? 18 : 14,
+    color: '#FF6B35',
+    fontWeight: '600',
+    marginBottom: 5,
   },
   count: {
-    fontSize: isTablet ? 100 : Math.min(screenWidth * 0.2, 80),
+    fontSize: isTablet ? 120 : Math.min(screenWidth * 0.25, 90),
     fontWeight: "bold",
-    color: "#d81b60",
+    color: "#FF1744",
     textAlign: "center",
+    textShadowColor: 'rgba(255, 23, 68, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+  totalLabel: {
+    fontSize: isTablet ? 16 : 12,
+    color: '#8B4513',
+    fontWeight: '500',
+    marginTop: 5,
   },
   hindiLabel: {
-    fontSize: isTablet ? 34 : Math.min(screenWidth * 0.07, 28),
-    color: "#880e4f",
-    fontWeight: "600",
-    marginTop: 5,
+    fontSize: isTablet ? 38 : Math.min(screenWidth * 0.08, 32),
+    color: "#8B4513",
+    fontWeight: "bold",
+    marginBottom: 20,
     textAlign: "center",
     fontFamily: "serif",
+    textShadowColor: 'rgba(139, 69, 19, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   tapButton: {
-    marginTop: screenHeight * 0.03,
-    backgroundColor: "#d81b60",
+    borderRadius: 50,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  tapButtonGradient: {
     paddingVertical: isTablet ? 25 : 20,
     paddingHorizontal: isTablet ? 80 : 60,
     borderRadius: 50,
-    elevation: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tapButtonText: {
     color: "white",
-    fontSize: isTablet ? 26 : 22,
+    fontSize: isTablet ? 28 : 24,
     fontWeight: "bold",
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   menuButton: {
     position: "absolute",
     top: screenHeight * 0.06,
     left: screenWidth * 0.05,
-    backgroundColor: "#d81b60",
-    padding: isTablet ? 15 : 10,
     borderRadius: 25,
+    shadowColor: '#FF1744',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  menuText: { color: "white", fontSize: isTablet ? 28 : 24, fontWeight: "bold" },
+  menuButtonGradient: {
+    padding: isTablet ? 15 : 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuText: { 
+    color: "white", 
+    fontSize: isTablet ? 24 : 20, 
+    fontWeight: "bold"
+  },
   menuOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-start",
   },
   menuContainer: {
-    backgroundColor: "white",
-    width: isTablet ? "60%" : "80%",
+    width: isTablet ? "60%" : "85%",
     height: "100%",
     padding: screenWidth * 0.05,
     paddingTop: screenHeight * 0.06,
   },
-  menuTitle: {
-    fontSize: isTablet ? 28 : 24,
-    fontWeight: "bold",
+  menuHeader: {
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  menuTitle: {
+    fontSize: isTablet ? 32 : 28,
+    fontWeight: "bold",
+    color: "#8B4513",
     textAlign: "center",
+    fontFamily: "serif",
   },
   menuLabel: {
-    fontSize: isTablet ? 20 : 18,
-    marginBottom: 10,
+    fontSize: isTablet ? 22 : 20,
+    marginBottom: 15,
+    marginTop: 20,
     fontWeight: "600",
+    color: "#FF6B35",
   },
-  colorRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  gradientRow: {
     marginBottom: 20,
   },
-  colorCircle: {
-    width: isTablet ? 44 : 36,
-    height: isTablet ? 44 : 36,
-    borderRadius: isTablet ? 22 : 18,
-    marginRight: 10,
-    marginBottom: 10,
-    borderWidth: 2,
+  gradientOption: {
+    marginRight: 15,
+  },
+  gradientCircle: {
+    width: isTablet ? 60 : 50,
+    height: isTablet ? 60 : 50,
+    borderRadius: isTablet ? 30 : 25,
+    borderWidth: 3,
     borderColor: "transparent",
   },
-  colorSelected: {
-    borderColor: "#d81b60",
-    borderWidth: 3,
+  gradientSelected: {
+    borderColor: "#FF1744",
+    borderWidth: 4,
   },
   menuButtonLarge: {
-    backgroundColor: "#d81b60",
+    borderRadius: 15,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  menuButtonGradient: {
     padding: isTablet ? 18 : 15,
-    borderRadius: 10,
-    marginVertical: 10,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuButtonText: {
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
+    fontSize: isTablet ? 20 : 18,
+  },
+  statsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 15,
+  },
+  statsTitle: {
+    fontSize: isTablet ? 22 : 20,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 5,
+  },
+  statLabel: {
     fontSize: isTablet ? 18 : 16,
+    color: '#8B4513',
+    fontWeight: '600',
+  },
+  statValue: {
+    fontSize: isTablet ? 18 : 16,
+    color: '#FF1744',
+    fontWeight: 'bold',
   },
   calendarContainer: {
     flex: 1,
     padding: 20,
-    justifyContent: "center",
-    backgroundColor: "#fffaf0",
+  },
+  calendarHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: screenHeight * 0.05,
+  },
+  calendarTitle: {
+    fontSize: isTablet ? 32 : 28,
+    fontWeight: 'bold',
+    color: '#8B4513',
+    fontFamily: 'serif',
+  },
+  calendar: {
+    borderRadius: 15,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  selectedDateContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 20,
+    alignItems: 'center',
   },
   selectedDateText: {
-    fontSize: isTablet ? 22 : 20,
-    marginBottom: 20,
+    fontSize: isTablet ? 24 : 22,
     textAlign: "center",
-    color: "#d81b60",
-    fontWeight: "600",
+    color: "#FF1744",
+    fontWeight: "bold",
   },
   namesContainer: {
     flex: 1,
-    padding: 40,
-    backgroundColor: "#fffaf0",
+    padding: 20,
+  },
+  namesHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: screenHeight * 0.05,
   },
   namesTitle: {
-    fontSize: isTablet ? 28 : 24,
+    fontSize: isTablet ? 32 : 28,
     fontWeight: "bold",
-    marginBottom: 20,
     textAlign: "center",
-    color: "#d81b60",
+    color: "#8B4513",
+    fontFamily: 'serif',
+  },
+  namesScrollContent: {
+    paddingBottom: 100,
+  },
+  nameItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  nameNumberContainer: {
+    backgroundColor: '#FF6B35',
+    borderRadius: 20,
+    width: 35,
+    height: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  nameNumber: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   nameItem: {
-    fontSize: isTablet ? 20 : 18,
-    marginBottom: 12,
-    color: "#4a148c",
+    fontSize: isTablet ? 22 : 20,
+    color: "#8B4513",
     fontFamily: "serif",
+    fontWeight: '600',
+    flex: 1,
+  },
+  closeButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  closeButtonGradient: {
+    padding: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: isTablet ? 20 : 18,
+    fontWeight: 'bold',
   },
 });
