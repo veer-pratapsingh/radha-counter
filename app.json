@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.veer7.radhacounter",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +27,19 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+  "bundler": "webpack",
+  "pwa": {
+    "name": "Radha Counter",
+    "themeColor": "#ffffff",
+    "backgroundColor": "#ffffff",
+    "display": "standalone",
+    "orientation": "portrait"
+  }
+},
+    "extra": {
+      "eas": {
+        "projectId": "025aae0e-77fb-4c57-a60e-c1048d74a0fa"
+      }
     }
   }
 }
