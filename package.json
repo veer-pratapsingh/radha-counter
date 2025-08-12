@@ -22,8 +22,8 @@
     "expo-image-picker": "^16.1.4",
     "expo-status-bar": "~2.2.3",
 
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-native": "0.79.5",
     "react-native-calendars": "^1.1313.0",
     "react-native-color-picker": "^0.6.0",
