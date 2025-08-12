@@ -63,6 +63,51 @@ const radhaNames = [
   "28. भवव्याधि-विनाशिनी",
 ];
 
+const languages = {
+  hindi: {
+    title: "श्री राधा रानी",
+    subtitle: "Divine Counter",
+    todayCount: "आज का जाप",
+    totalCount: "कुल जाप",
+    radheKrishna: "॥ राधे कृष्ण ॥",
+    tapButton: "🙏 जाप करें 🙏",
+    settings: "🔹 सेटिंग्स 🔹",
+    themes: "🎨 Divine Themes",
+    divineImage: "📸 Divine Image",
+    stats: "📊 आपकी साधना",
+    calendar: "📅 Calendar",
+    names: "🌸 28 Names",
+    close: "❌ Close",
+    calendarTitle: "📅 साधना कैलेंडर",
+    selectDate: "📅 तारीख चुनें",
+    dateCount: "को जाप",
+    namesTitle: "🌸 श्री राधा रानी के 28 नाम 🌸",
+    closeButton: "बंद करें",
+    language: "🌐 भाषा"
+  },
+  english: {
+    title: "Shri Radha Rani",
+    subtitle: "Divine Counter",
+    todayCount: "Today's Japa",
+    totalCount: "Total Japa",
+    radheKrishna: "॥ Radhe Krishna ॥",
+    tapButton: "🙏 Tap to Count 🙏",
+    settings: "🔹 Settings 🔹",
+    themes: "🎨 Divine Themes",
+    divineImage: "📸 Divine Image",
+    stats: "📊 Your Sadhana",
+    calendar: "📅 Calendar",
+    names: "🌸 28 Names",
+    close: "❌ Close",
+    calendarTitle: "📅 Sadhana Calendar",
+    selectDate: "📅 Select Date",
+    dateCount: "Japa Count",
+    namesTitle: "🌸 Shri Radha Rani's 28 Names 🌸",
+    closeButton: "Close",
+    language: "🌐 Language"
+  }
+};
+
 export default function App() {
   const [count, setCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
@@ -75,9 +120,11 @@ export default function App() {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [namesVisible, setNamesVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
+  const [language, setLanguage] = useState("hindi");
   const [scaleAnim] = useState(new Animated.Value(1));
   const [glowAnim] = useState(new Animated.Value(0));
   const today = new Date().toISOString().split("T")[0];
+  const t = languages[language];
 
   useEffect(() => {
     loadData();
@@ -107,6 +154,7 @@ export default function App() {
       const savedTotal = await AsyncStorage.getItem("radhaTotal");
       const savedBgGradient = await AsyncStorage.getItem("radhaBgGradient");
       const savedImage = await AsyncStorage.getItem("radhaImage");
+      const savedLanguage = await AsyncStorage.getItem("radhaLanguage");
 
       if (savedHistory) {
         const hist = JSON.parse(savedHistory);
@@ -116,17 +164,19 @@ export default function App() {
       if (savedTotal) setTotalCount(parseInt(savedTotal, 10));
       if (savedBgGradient) setBgGradient(JSON.parse(savedBgGradient));
       if (savedImage) setImageUri(savedImage);
+      if (savedLanguage) setLanguage(savedLanguage);
     } catch (e) {
       console.log("Error loading data", e);
     }
   };
 
-  const saveData = async (updatedHistory, updatedTotal, updatedBgGradient, updatedImage) => {
+  const saveData = async (updatedHistory, updatedTotal, updatedBgGradient, updatedImage, updatedLanguage) => {
     try {
       await AsyncStorage.setItem("radhaHistory", JSON.stringify(updatedHistory));
       await AsyncStorage.setItem("radhaTotal", updatedTotal.toString());
       await AsyncStorage.setItem("radhaBgGradient", JSON.stringify(updatedBgGradient));
       if (updatedImage) await AsyncStorage.setItem("radhaImage", updatedImage);
+      if (updatedLanguage) await AsyncStorage.setItem("radhaLanguage", updatedLanguage);
     } catch (e) {
       console.log("Error saving data", e);
     }
@@ -155,7 +205,7 @@ export default function App() {
     setTotalCount(newTotal);
     setHistory(updatedHistory);
 
-    saveData(updatedHistory, newTotal, bgGradient, imageUri);
+    saveData(updatedHistory, newTotal, bgGradient, imageUri, language);
   };
 
   const pickImage = async () => {
@@ -168,13 +218,13 @@ export default function App() {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      saveData(history, totalCount, bgGradient, result.assets[0].uri);
+      saveData(history, totalCount, bgGradient, result.assets[0].uri, language);
     }
   };
 
   const changeGradient = (gradient) => {
     setBgGradient(gradient);
-    saveData(history, totalCount, gradient, imageUri);
+    saveData(history, totalCount, gradient, imageUri, language);
   };
 
   const onDayPress = (day) => {
@@ -213,6 +263,11 @@ export default function App() {
     return marked;
   };
 
+  const changeLanguage = (newLanguage) => {
+    setLanguage(newLanguage);
+    saveData(history, totalCount, bgGradient, imageUri, newLanguage);
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
@@ -222,8 +277,8 @@ export default function App() {
           <View style={styles.omContainer}>
             <Text style={styles.omSymbol}>ॐ</Text>
           </View>
-          <Text style={styles.heading}>श्री राधा रानी</Text>
-          <Text style={styles.subtitle}>Divine Counter</Text>
+          <Text style={styles.heading}>{t.title}</Text>
+          <Text style={styles.subtitle}>{t.subtitle}</Text>
           <View style={styles.quoteContainer}>
             <Text style={styles.quote}>
               कृष्णाय वासुदेवाय हरये परमात्मने॥{"\n"}
@@ -248,12 +303,12 @@ export default function App() {
 
           {/* Count Display */}
           <View style={styles.countContainer}>
-            <Text style={styles.countLabel}>आज का जाप</Text>
+            <Text style={styles.countLabel}>{t.todayCount}</Text>
             <Text style={styles.count}>{count}</Text>
-            <Text style={styles.totalLabel}>कुल जाप: {totalCount}</Text>
+            <Text style={styles.totalLabel}>{t.totalCount}: {totalCount}</Text>
           </View>
 
-          <Text style={styles.hindiLabel}>॥ राधे कृष्ण ॥</Text>
+          <Text style={styles.hindiLabel}>{t.radheKrishna}</Text>
 
           {/* Divine Tap Button */}
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -262,7 +317,7 @@ export default function App() {
                 colors={['#FF6B35', '#F7931E', '#FFD700']}
                 style={styles.tapButtonGradient}
               >
-                <Text style={styles.tapButtonText}>🙏 जाप करें 🙏</Text>
+                <Text style={styles.tapButtonText}>{t.tapButton}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -281,11 +336,28 @@ export default function App() {
             <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.menuContainer}>
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.menuHeader}>
-                  <Text style={styles.menuTitle}>🔹 सेटिंग्स 🔹</Text>
+                  <Text style={styles.menuTitle}>{t.settings}</Text>
+                </View>
+
+                {/* Language Selection */}
+                <Text style={styles.menuLabel}>{t.language}</Text>
+                <View style={styles.languageContainer}>
+                  <TouchableOpacity
+                    style={[styles.languageButton, language === 'hindi' && styles.languageSelected]}
+                    onPress={() => changeLanguage('hindi')}
+                  >
+                    <Text style={[styles.languageText, language === 'hindi' && styles.languageTextSelected]}>हिंदी</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.languageButton, language === 'english' && styles.languageSelected]}
+                    onPress={() => changeLanguage('english')}
+                  >
+                    <Text style={[styles.languageText, language === 'english' && styles.languageTextSelected]}>English</Text>
+                  </TouchableOpacity>
                 </View>
 
                 {/* Theme Selection */}
-                <Text style={styles.menuLabel}>🎨 Divine Themes</Text>
+                <Text style={styles.menuLabel}>{t.themes}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gradientRow}>
                   {presetGradients.map((gradient, index) => (
                     <TouchableOpacity
@@ -307,19 +379,19 @@ export default function App() {
                 {/* Divine Image */}
                 <TouchableOpacity style={styles.menuButtonLarge} onPress={pickImage}>
                   <LinearGradient colors={['#4CAF50', '#8BC34A']} style={styles.menuButtonGradient}>
-                    <Text style={styles.menuButtonText}>📸 Divine Image</Text>
+                    <Text style={styles.menuButtonText}>{t.divineImage}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
                 {/* Stats */}
                 <View style={styles.statsContainer}>
-                  <Text style={styles.statsTitle}>📊 आपकी साधना</Text>
+                  <Text style={styles.statsTitle}>{t.stats}</Text>
                   <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>आज का जाप:</Text>
+                    <Text style={styles.statLabel}>{t.todayCount}:</Text>
                     <Text style={styles.statValue}>{count}</Text>
                   </View>
                   <View style={styles.statRow}>
-                    <Text style={styles.statLabel}>कुल जाप:</Text>
+                    <Text style={styles.statLabel}>{t.totalCount}:</Text>
                     <Text style={styles.statValue}>{totalCount}</Text>
                   </View>
                 </View>
@@ -333,7 +405,7 @@ export default function App() {
                   }}
                 >
                   <LinearGradient colors={['#2196F3', '#03A9F4']} style={styles.menuButtonGradient}>
-                    <Text style={styles.menuButtonText}>📅 Calendar</Text>
+                    <Text style={styles.menuButtonText}>{t.calendar}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -345,13 +417,13 @@ export default function App() {
                   }}
                 >
                   <LinearGradient colors={['#9C27B0', '#E91E63']} style={styles.menuButtonGradient}>
-                    <Text style={styles.menuButtonText}>🌸 28 Names</Text>
+                    <Text style={styles.menuButtonText}>{t.names}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.menuButtonLarge} onPress={() => setMenuVisible(false)}>
                   <LinearGradient colors={['#FF5722', '#F44336']} style={styles.menuButtonGradient}>
-                    <Text style={styles.menuButtonText}>❌ Close</Text>
+                    <Text style={styles.menuButtonText}>{t.close}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </ScrollView>
@@ -363,7 +435,7 @@ export default function App() {
         <Modal visible={calendarVisible} animationType="slide" transparent={false}>
           <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.calendarContainer}>
             <View style={styles.calendarHeader}>
-              <Text style={styles.calendarTitle}>📅 साधना कैलेंडर</Text>
+              <Text style={styles.calendarTitle}>{t.calendarTitle}</Text>
             </View>
             <Calendar
               onDayPress={onDayPress}
@@ -395,14 +467,14 @@ export default function App() {
             <View style={styles.selectedDateContainer}>
               <Text style={styles.selectedDateText}>
                 {selectedDate ? 
-                  `${selectedDate} को जाप: ${history[selectedDate] || 0}` : 
-                  "📅 तारीख चुनें"
+                  `${selectedDate} ${t.dateCount}: ${history[selectedDate] || 0}` : 
+                  t.selectDate
                 }
               </Text>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={() => setCalendarVisible(false)}>
               <LinearGradient colors={['#FF5722', '#F44336']} style={styles.closeButtonGradient}>
-                <Text style={styles.closeButtonText}>बंद करें</Text>
+                <Text style={styles.closeButtonText}>{t.closeButton}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
@@ -412,7 +484,7 @@ export default function App() {
         <Modal visible={namesVisible} animationType="slide" transparent={false}>
           <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.namesContainer}>
             <View style={styles.namesHeader}>
-              <Text style={styles.namesTitle}>🌸 श्री राधा रानी के 28 नाम 🌸</Text>
+              <Text style={styles.namesTitle}>{t.namesTitle}</Text>
             </View>
             <ScrollView contentContainerStyle={styles.namesScrollContent} showsVerticalScrollIndicator={false}>
               {radhaNames.map((name, index) => (
@@ -426,7 +498,7 @@ export default function App() {
             </ScrollView>
             <TouchableOpacity style={styles.closeButton} onPress={() => setNamesVisible(false)}>
               <LinearGradient colors={['#FF5722', '#F44336']} style={styles.closeButtonGradient}>
-                <Text style={styles.closeButtonText}>बंद करें</Text>
+                <Text style={styles.closeButtonText}>{t.closeButton}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
@@ -443,8 +515,9 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: screenHeight * 0.02,
-    paddingBottom: screenHeight * 0.01,
+    paddingTop: screenHeight * 0.01,
+    paddingBottom: screenHeight * 0.005,
+    paddingHorizontal: screenWidth * 0.05,
   },
   omContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -499,16 +572,16 @@ const styles = StyleSheet.create({
   },
   centerArea: { 
     flex: 1, 
-    justifyContent: "center", 
+    justifyContent: "space-evenly", 
     alignItems: "center",
     paddingHorizontal: screenWidth * 0.05,
+    paddingVertical: screenHeight * 0.02,
   },
   imageContainer: {
     shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 20,
     elevation: 15,
-    marginBottom: 20,
   },
   image: {
     width: imageSize,
@@ -521,8 +594,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
-    padding: 15,
-    marginBottom: 15,
+    padding: screenHeight * 0.015,
+    minWidth: screenWidth * 0.6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -551,10 +624,9 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   hindiLabel: {
-    fontSize: isTablet ? 38 : Math.min(screenWidth * 0.08, 32),
+    fontSize: isTablet ? 32 : Math.min(screenWidth * 0.07, 28),
     color: "#8B4513",
     fontWeight: "bold",
-    marginBottom: 20,
     textAlign: "center",
     fontFamily: "serif",
     textShadowColor: 'rgba(139, 69, 19, 0.3)',
@@ -586,7 +658,7 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     position: "absolute",
-    top: screenHeight * 0.06,
+    top: (StatusBar.currentHeight || 0) + screenHeight * 0.02,
     left: screenWidth * 0.05,
     borderRadius: 25,
     shadowColor: '#FF1744',
@@ -594,6 +666,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    zIndex: 1000,
   },
   menuButtonGradient: {
     padding: isTablet ? 15 : 12,
@@ -792,9 +865,9 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
+    bottom: screenHeight * 0.03,
+    left: screenWidth * 0.05,
+    right: screenWidth * 0.05,
     borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -812,5 +885,30 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: isTablet ? 20 : 18,
     fontWeight: 'bold',
+  },
+  languageContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 25,
+    padding: 5,
+  },
+  languageButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginHorizontal: 5,
+  },
+  languageSelected: {
+    backgroundColor: '#FF6B35',
+  },
+  languageText: {
+    fontSize: isTablet ? 18 : 16,
+    fontWeight: '600',
+    color: '#8B4513',
+  },
+  languageTextSelected: {
+    color: 'white',
   },
 });
