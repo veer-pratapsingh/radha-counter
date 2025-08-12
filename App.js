@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,9 +11,8 @@ import {
   Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// Lazy load Calendar and ImagePicker
-const Calendar = lazy(() => import("react-native-calendars"));
-const ImagePicker = lazy(() => import("expo-image-picker"));
+import * as ImagePicker from "expo-image-picker";
+import { Calendar } from "react-native-calendars";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -120,20 +119,18 @@ export default function App() {
     saveData(updatedHistory, newTotal, bgColor, imageUri);
   };
 
-const pickImage = async () => {
-  const ImagePickerModule = await import("expo-image-picker");
-  const result = await ImagePickerModule.launchImageLibraryAsync({
-    mediaTypes: ImagePickerModule.MediaTypeOptions.Images,
-    allowsEditing: true,
-    quality: 1,
-  });
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
 
-  if (!result.canceled) {
-    setImageUri(result.assets[0].uri);
-    saveData(history, totalCount, bgColor, result.assets[0].uri);
-  }
-};
-
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+      saveData(history, totalCount, bgColor, result.assets[0].uri);
+    }
+  };
 
   const changeColor = (color) => {
     setBgColor(color);
@@ -234,23 +231,21 @@ const pickImage = async () => {
       </Modal>
 
       {/* Calendar Modal */}
-<Modal visible={calendarVisible} animationType="slide" transparent={false}>
-  <View style={styles.calendarContainer}>
-    <Suspense fallback={<Text>Loading Calendar...</Text>}>
-      <Calendar
-        onDayPress={onDayPress}
-        markedDates={{
-          [selectedDate]: { selected: true, selectedColor: "#d81b60" },
-        }}
-        style={{ marginBottom: 10 }}
-      />
-    </Suspense>
-    <Text style={styles.selectedDateText}>
-      {selectedDate ? `Taps on ${selectedDate}: ${history[selectedDate] || 0}` : "Select a date"}
-    </Text>
-    <Button title="Close Calendar" onPress={() => setCalendarVisible(false)} />
-  </View>
-</Modal>
+      <Modal visible={calendarVisible} animationType="slide" transparent={false}>
+        <View style={styles.calendarContainer}>
+          <Calendar
+            onDayPress={onDayPress}
+            markedDates={{
+              [selectedDate]: { selected: true, selectedColor: "#d81b60" },
+            }}
+            style={{ marginBottom: 10 }}
+          />
+          <Text style={styles.selectedDateText}>
+            {selectedDate ? `Taps on ${selectedDate}: ${history[selectedDate] || 0}` : "Select a date"}
+          </Text>
+          <Button title="Close Calendar" onPress={() => setCalendarVisible(false)} />
+        </View>
+      </Modal>
 
       {/* Radha Rani 28 Names Modal */}
       <Modal visible={namesVisible} animationType="slide" transparent={false}>
