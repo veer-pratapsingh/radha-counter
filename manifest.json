@@ -1,0 +1,16 @@
+{
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "lang": "en",
+  "name": "radha-counter",
+  "short_name": "radha-counter",
+  "start_url": "/?utm_source=web_app_manifest",
+  "orientation": "portrait",
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "id": "com.veer7.radhacounter"
+    }
+  ],
+  "prefer_related_applications": true
+}
