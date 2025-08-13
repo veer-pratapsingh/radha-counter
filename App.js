@@ -19,7 +19,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const isTablet = screenWidth > 768;
-const imageSize = Math.min(screenWidth * 0.6, screenHeight * 0.3, 250);
+const isSmallScreen = screenHeight < 700;
+const imageSize = isSmallScreen ? Math.min(screenWidth * 0.45, 180) : Math.min(screenWidth * 0.6, screenHeight * 0.25, 220);
 
 const presetGradients = [
   ["#FFE0B2", "#FFCCBC", "#FFF3E0"], // Warm Orange
@@ -69,7 +70,7 @@ const languages = {
     subtitle: "Divine Counter",
     todayCount: "आज का जाप",
     totalCount: "कुल जाप",
-    radheKrishna: "॥ राधे कृष्ण ॥",
+    radheKrishna: "॥ राधाकृष्ण ॥",
     tapButton: "🙏 जाप करें 🙏",
     settings: "🔹 सेटिंग्स 🔹",
     themes: "🎨 Divine Themes",
@@ -90,7 +91,7 @@ const languages = {
     subtitle: "Divine Counter",
     todayCount: "Today's Japa",
     totalCount: "Total Japa",
-    radheKrishna: "॥ Radhe Krishna ॥",
+    radheKrishna: "॥ RadhaKrishna ॥",
     tapButton: "🙏 Tap to Count 🙏",
     settings: "🔹 Settings 🔹",
     themes: "🎨 Divine Themes",
@@ -159,7 +160,9 @@ export default function App() {
       if (savedHistory) {
         const hist = JSON.parse(savedHistory);
         setHistory(hist);
-        setCount(hist[today] || 0);
+        // Always use today's date for current count
+        const todayCount = hist[today] || 0;
+        setCount(todayCount);
       }
       if (savedTotal) setTotalCount(parseInt(savedTotal, 10));
       if (savedBgGradient) setBgGradient(JSON.parse(savedBgGradient));
@@ -515,8 +518,8 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: screenHeight * 0.01,
-    paddingBottom: screenHeight * 0.005,
+    paddingTop: isSmallScreen ? screenHeight * 0.005 : screenHeight * 0.01,
+    paddingBottom: isSmallScreen ? 0 : screenHeight * 0.005,
     paddingHorizontal: screenWidth * 0.05,
   },
   omContainer: {
@@ -531,12 +534,12 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   omSymbol: {
-    fontSize: isTablet ? 32 : 24,
+    fontSize: isSmallScreen ? 20 : (isTablet ? 32 : 24),
     color: '#FF6B35',
     fontWeight: 'bold',
   },
   heading: {
-    fontSize: isTablet ? 42 : 32,
+    fontSize: isSmallScreen ? 24 : (isTablet ? 42 : 32),
     fontWeight: "bold",
     textAlign: "center",
     color: "#8B4513",
@@ -546,15 +549,15 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: isTablet ? 18 : 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 18 : 14),
     color: '#FF6B35',
     fontStyle: 'italic',
-    marginBottom: 10,
+    marginBottom: isSmallScreen ? 5 : 10,
   },
   quoteContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 15,
-    padding: 15,
+    padding: isSmallScreen ? 10 : 15,
     marginHorizontal: screenWidth * 0.05,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -563,19 +566,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   quote: {
-    fontSize: isTablet ? 20 : 16,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 20 : 16),
     color: "#8B4513",
     fontStyle: "italic",
     textAlign: "center",
     fontFamily: "serif",
-    lineHeight: isTablet ? 28 : 24,
+    lineHeight: isSmallScreen ? 18 : (isTablet ? 28 : 24),
   },
   centerArea: { 
     flex: 1, 
-    justifyContent: "space-evenly", 
+    justifyContent: isSmallScreen ? "space-around" : "space-evenly", 
     alignItems: "center",
     paddingHorizontal: screenWidth * 0.05,
-    paddingVertical: screenHeight * 0.02,
+    paddingVertical: isSmallScreen ? screenHeight * 0.01 : screenHeight * 0.02,
   },
   imageContainer: {
     shadowColor: '#FF6B35',
@@ -594,7 +597,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
-    padding: screenHeight * 0.015,
+    padding: isSmallScreen ? 10 : screenHeight * 0.015,
     minWidth: screenWidth * 0.6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -603,13 +606,13 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   countLabel: {
-    fontSize: isTablet ? 18 : 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 18 : 14),
     color: '#FF6B35',
     fontWeight: '600',
     marginBottom: 5,
   },
   count: {
-    fontSize: isTablet ? 120 : Math.min(screenWidth * 0.25, 90),
+    fontSize: isSmallScreen ? Math.min(screenWidth * 0.2, 60) : (isTablet ? 120 : Math.min(screenWidth * 0.25, 90)),
     fontWeight: "bold",
     color: "#FF1744",
     textAlign: "center",
@@ -618,13 +621,13 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   totalLabel: {
-    fontSize: isTablet ? 16 : 12,
+    fontSize: isSmallScreen ? 10 : (isTablet ? 16 : 12),
     color: '#8B4513',
     fontWeight: '500',
     marginTop: 5,
   },
   hindiLabel: {
-    fontSize: isTablet ? 32 : Math.min(screenWidth * 0.07, 28),
+    fontSize: isSmallScreen ? Math.min(screenWidth * 0.06, 20) : (isTablet ? 32 : Math.min(screenWidth * 0.07, 28)),
     color: "#8B4513",
     fontWeight: "bold",
     textAlign: "center",
@@ -642,15 +645,15 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   tapButtonGradient: {
-    paddingVertical: isTablet ? 25 : 20,
-    paddingHorizontal: isTablet ? 80 : 60,
+    paddingVertical: isSmallScreen ? 15 : (isTablet ? 25 : 20),
+    paddingHorizontal: isSmallScreen ? 40 : (isTablet ? 80 : 60),
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tapButtonText: {
     color: "white",
-    fontSize: isTablet ? 28 : 24,
+    fontSize: isSmallScreen ? 18 : (isTablet ? 28 : 24),
     fontWeight: "bold",
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
