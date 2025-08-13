@@ -84,7 +84,8 @@ const languages = {
     dateCount: "को जाप",
     namesTitle: "🌸 श्री राधा रानी के 28 नाम 🌸",
     closeButton: "बंद करें",
-    language: "🌐 भाषा"
+    language: "🌐 भाषा",
+    reset: "🔄 सभी डेटा रीसेट करें"
   },
   english: {
     title: "Shri Radha Rani",
@@ -105,7 +106,8 @@ const languages = {
     dateCount: "Japa Count",
     namesTitle: "🌸 Shri Radha Rani's 28 Names 🌸",
     closeButton: "Close",
-    language: "🌐 Language"
+    language: "🌐 Language",
+    reset: "🔄 Reset All Data"
   }
 };
 
@@ -114,7 +116,7 @@ export default function App() {
   const [totalCount, setTotalCount] = useState(0);
   const [bgGradient, setBgGradient] = useState(["#FFE0B2", "#FFCCBC", "#FFF3E0"]);
   const [imageUri, setImageUri] = useState(
-    "https://upload.wikimedia.org/wikipedia/commons/6/65/Radha_Rani.jpg"
+    "https://i.imgur.com/8QZ9Z9K.jpg"
   );
   const [history, setHistory] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
@@ -271,6 +273,18 @@ export default function App() {
     saveData(history, totalCount, bgGradient, imageUri, newLanguage);
   };
 
+  const resetData = async () => {
+    try {
+      await AsyncStorage.multiRemove(['radhaHistory', 'radhaTotal']);
+      setCount(0);
+      setTotalCount(0);
+      setHistory({});
+      setMenuVisible(false);
+    } catch (e) {
+      console.log('Error resetting data', e);
+    }
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
@@ -326,11 +340,13 @@ export default function App() {
           </Animated.View>
         </View>
 
-        {/* Floating Menu Button */}
+        {/* Menu Button */}
         <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
-          <LinearGradient colors={['#FF1744', '#E91E63']} style={styles.menuButtonGradient}>
-            <Text style={styles.menuText}>⚙️</Text>
-          </LinearGradient>
+          <View style={styles.menuButtonContainer}>
+            <View style={styles.menuLine} />
+            <View style={styles.menuLine} />
+            <View style={styles.menuLine} />
+          </View>
         </TouchableOpacity>
 
         {/* Divine Menu */}
@@ -421,6 +437,12 @@ export default function App() {
                 >
                   <LinearGradient colors={['#9C27B0', '#E91E63']} style={styles.menuButtonGradient}>
                     <Text style={styles.menuButtonText}>{t.names}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.menuButtonLarge} onPress={resetData}>
+                  <LinearGradient colors={['#F44336', '#D32F2F']} style={styles.menuButtonGradient}>
+                    <Text style={styles.menuButtonText}>{t.reset}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -663,24 +685,35 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: (StatusBar.currentHeight || 0) + screenHeight * 0.02,
     left: screenWidth * 0.05,
-    borderRadius: 25,
-    shadowColor: '#FF1744',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    width: isTablet ? 50 : 40,
+    height: isTablet ? 50 : 40,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
     zIndex: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuButtonContainer: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: isTablet ? 20 : 16,
+  },
+  menuLine: {
+    width: isTablet ? 24 : 20,
+    height: 3,
+    backgroundColor: '#FF6B35',
+    borderRadius: 2,
   },
   menuButtonGradient: {
-    padding: isTablet ? 15 : 12,
-    borderRadius: 25,
+    padding: isTablet ? 18 : 15,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  menuText: { 
-    color: "white", 
-    fontSize: isTablet ? 24 : 20, 
-    fontWeight: "bold"
   },
   menuOverlay: {
     flex: 1,
