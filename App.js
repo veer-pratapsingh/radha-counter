@@ -117,8 +117,7 @@ export default function App() {
   const [count, setCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [bgGradient, setBgGradient] = useState(["#FFE0B2", "#FFCCBC", "#FFF3E0"]);
-  // Offline default image (base64 encoded)
-  const defaultImageUri = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAoACgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKACiiigD//2Q==";
+  const defaultImageUri = "https://i.pinimg.com/736x/f3/55/a9/f355a9bb1f18ff06bb238d2e4c234587.jpg";
   const [imageUri, setImageUri] = useState(defaultImageUri);
   const [history, setHistory] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
@@ -280,13 +279,6 @@ export default function App() {
     await AsyncStorage.removeItem("radhaImage");
   };
 
-  const handleImageError = () => {
-    // Fallback to default image if network image fails
-    if (imageUri !== defaultImageUri) {
-      setImageUri(defaultImageUri);
-    }
-  };
-
   const resetData = async () => {
     try {
       await AsyncStorage.multiRemove(['radhaHistory', 'radhaTotal']);
@@ -329,12 +321,7 @@ export default function App() {
               }),
             },
           ]}>
-            <Image 
-              source={{ uri: imageUri }} 
-              style={styles.image} 
-              resizeMode="cover"
-              onError={handleImageError}
-            />
+            <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
           </Animated.View>
 
           {/* Count Display */}

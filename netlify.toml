@@ -1,8 +1,3 @@
 [build]
-  command = "npm run export:web && cp public/sw.js dist/"
+  command = "npm run export:web"
   publish = "dist"
-
-[[headers]]
-  for = "/sw.js"
-  [headers.values]
-    Cache-Control = "no-cache"
