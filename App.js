@@ -74,7 +74,8 @@ const languages = {
     tapButton: "🙏 जाप करें 🙏",
     settings: "🔹 सेटिंग्स 🔹",
     themes: "🎨 Divine Themes",
-    divineImage: "📸 Divine Image",
+    changeImage: "📸 छवि बदलें",
+    resetImage: "🔄 मूल छवि",
     stats: "📊 आपकी साधना",
     calendar: "📅 Calendar",
     names: "🌸 28 Names",
@@ -96,7 +97,8 @@ const languages = {
     tapButton: "🙏 Tap to Count 🙏",
     settings: "🔹 Settings 🔹",
     themes: "🎨 Divine Themes",
-    divineImage: "📸 Divine Image",
+    changeImage: "📸 Change Image",
+    resetImage: "🔄 Default Image",
     stats: "📊 Your Sadhana",
     calendar: "📅 Calendar",
     names: "🌸 28 Names",
@@ -115,9 +117,8 @@ export default function App() {
   const [count, setCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [bgGradient, setBgGradient] = useState(["#FFE0B2", "#FFCCBC", "#FFF3E0"]);
-  const [imageUri, setImageUri] = useState(
-    "https://i.pinimg.com/736x/f3/55/a9/f355a9bb1f18ff06bb238d2e4c234587.jpg"
-  );
+  const defaultImageUri = "https://i.pinimg.com/736x/f3/55/a9/f355a9bb1f18ff06bb238d2e4c234587.jpg";
+  const [imageUri, setImageUri] = useState(defaultImageUri);
   const [history, setHistory] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -273,6 +274,11 @@ export default function App() {
     saveData(history, totalCount, bgGradient, imageUri, newLanguage);
   };
 
+  const resetImage = async () => {
+    setImageUri(defaultImageUri);
+    await AsyncStorage.removeItem("radhaImage");
+  };
+
   const resetData = async () => {
     try {
       await AsyncStorage.multiRemove(['radhaHistory', 'radhaTotal']);
@@ -394,12 +400,19 @@ export default function App() {
                   ))}
                 </ScrollView>
 
-                {/* Divine Image */}
-                <TouchableOpacity style={styles.menuButtonLarge} onPress={pickImage}>
-                  <LinearGradient colors={['#4CAF50', '#8BC34A']} style={styles.menuButtonGradient}>
-                    <Text style={styles.menuButtonText}>{t.divineImage}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                {/* Image Options */}
+                <View style={styles.imageOptionsContainer}>
+                  <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+                    <LinearGradient colors={['#4CAF50', '#8BC34A']} style={styles.imageButtonGradient}>
+                      <Text style={styles.imageButtonText}>{t.changeImage}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.imageButton} onPress={resetImage}>
+                    <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.imageButtonGradient}>
+                      <Text style={styles.imageButtonText}>{t.resetImage}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
 
                 {/* Stats */}
                 <View style={styles.statsContainer}>
@@ -945,5 +958,30 @@ const styles = StyleSheet.create({
   },
   languageTextSelected: {
     color: 'white',
+  },
+  imageOptionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 15,
+  },
+  imageButton: {
+    flex: 0.48,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  imageButtonGradient: {
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageButtonText: {
+    color: 'white',
+    fontSize: isTablet ? 16 : 14,
+    fontWeight: 'bold',
   },
 });
