@@ -20,7 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const isTablet = screenWidth > 768;
 const isSmallScreen = screenHeight < 700;
-const imageSize = isSmallScreen ? Math.min(screenWidth * 0.45, 180) : Math.min(screenWidth * 0.6, screenHeight * 0.25, 220);
+const imageSize = isSmallScreen ? Math.min(screenWidth * 0.65, 220) : Math.min(screenWidth * 0.8, screenHeight * 0.35, 280);
 
 const presetGradients = [
   ["#FFE0B2", "#FFCCBC", "#FFF3E0"], // Warm Orange
@@ -116,7 +116,7 @@ export default function App() {
   const [totalCount, setTotalCount] = useState(0);
   const [bgGradient, setBgGradient] = useState(["#FFE0B2", "#FFCCBC", "#FFF3E0"]);
   const [imageUri, setImageUri] = useState(
-    "https://i.imgur.com/8QZ9Z9K.jpg"
+    "https://i.pinimg.com/736x/f3/55/a9/f355a9bb1f18ff06bb238d2e4c234587.jpg"
   );
   const [history, setHistory] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
@@ -322,7 +322,6 @@ export default function App() {
           <View style={styles.countContainer}>
             <Text style={styles.countLabel}>{t.todayCount}</Text>
             <Text style={styles.count}>{count}</Text>
-            <Text style={styles.totalLabel}>{t.totalCount}: {totalCount}</Text>
           </View>
 
           <Text style={styles.hindiLabel}>{t.radheKrishna}</Text>
@@ -634,11 +633,11 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   count: {
-    fontSize: isSmallScreen ? Math.min(screenWidth * 0.2, 60) : (isTablet ? 120 : Math.min(screenWidth * 0.25, 90)),
+    fontSize: isSmallScreen ? Math.min(screenWidth * 0.15, 45) : (isTablet ? 80 : Math.min(screenWidth * 0.18, 65)),
     fontWeight: "bold",
-    color: "#FF1744",
+    color: "#8B4513",
     textAlign: "center",
-    textShadowColor: 'rgba(255, 23, 68, 0.3)',
+    textShadowColor: 'rgba(139, 69, 19, 0.3)',
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
