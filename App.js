@@ -333,7 +333,11 @@ export default function App() {
           </View>
         </View>
 
-        <View style={styles.centerArea}>
+        <ScrollView 
+          contentContainerStyle={styles.centerArea}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           {/* Divine Image with Glow Effect */}
           <Animated.View style={[
             styles.imageContainer,
@@ -382,7 +386,7 @@ export default function App() {
               </TouchableOpacity>
             </View>
           ) : null}
-        </View>
+        </ScrollView>
 
         {/* Menu Button */}
         <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
@@ -656,8 +660,8 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: screenHeight * 0.02,
-    paddingBottom: screenHeight * 0.01,
+    paddingTop: screenHeight * 0.01,
+    paddingBottom: screenHeight * 0.005,
     paddingHorizontal: screenWidth * 0.05,
   },
   omContainer: {
@@ -712,12 +716,12 @@ const styles = StyleSheet.create({
     lineHeight: isSmallScreen ? 18 : (isTablet ? 28 : 24),
   },
   centerArea: { 
-    flex: 1, 
-    justifyContent: "center", 
+    flexGrow: 1,
+    justifyContent: "space-evenly", 
     alignItems: "center",
     paddingHorizontal: screenWidth * 0.05,
-    paddingVertical: screenHeight * 0.02,
-    gap: screenHeight * 0.025,
+    paddingVertical: screenHeight * 0.03,
+    minHeight: screenHeight * 0.7,
   },
   imageContainer: {
     shadowColor: '#FF6B35',
