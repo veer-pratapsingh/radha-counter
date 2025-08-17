@@ -392,13 +392,8 @@ export default function App() {
 
         {/* Divine Menu */}
         <Modal visible={menuVisible} animationType="slide" transparent={true}>
-          <TouchableOpacity 
-            style={styles.menuOverlay} 
-            activeOpacity={1} 
-            onPress={() => setMenuVisible(false)}
-          >
-            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-              <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.menuContainer}>
+          <View style={styles.menuOverlay}>
+            <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.menuContainer}>
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.menuHeader}>
                   <Text style={styles.menuTitle}>{t.settings}</Text>
@@ -565,9 +560,13 @@ export default function App() {
                   </LinearGradient>
                 </TouchableOpacity>
               </ScrollView>
-              </LinearGradient>
-            </TouchableOpacity>
-          </TouchableOpacity>
+            </LinearGradient>
+            <TouchableOpacity 
+              style={styles.menuRightSpace} 
+              onPress={() => setMenuVisible(false)}
+              activeOpacity={1}
+            />
+          </View>
         </Modal>
 
         {/* Divine Calendar */}
@@ -820,13 +819,17 @@ const styles = StyleSheet.create({
   menuOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-start",
+    flexDirection: "row",
   },
   menuContainer: {
     width: isTablet ? "60%" : "85%",
     height: "100%",
     padding: screenWidth * 0.05,
     paddingTop: screenHeight * 0.06,
+  },
+  menuRightSpace: {
+    flex: 1,
+    height: "100%",
   },
   menuHeader: {
     alignItems: 'center',
