@@ -127,6 +127,11 @@ export default function App() {
   const [language, setLanguage] = useState("hindi");
   const [scaleAnim] = useState(new Animated.Value(1));
   const [glowAnim] = useState(new Animated.Value(0));
+  // --- NEW STATES ---
+  const [streak, setStreak] = useState(0);
+  const [lastTapDate, setLastTapDate] = useState("");
+  const [achievements, setAchievements] = useState([]);
+  const [milestoneMessage, setMilestoneMessage] = useState("");
   const today = new Date().toISOString().split("T")[0];
   const t = languages[language];
 
@@ -188,24 +193,46 @@ export default function App() {
     }
   };
 
+  
+
   const onTap = () => {
-    // Animate button press
     Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
+      Animated.timing(scaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
     ]).start();
 
     const newCount = count + 1;
     const newTotal = totalCount + 1;
     const updatedHistory = { ...history, [today]: newCount };
+
+    // 📿 Check milestone (108 = 1 mala)
+    if (newCount % 108 === 0) {
+      setMilestoneMessage(`🎉 You completed ${newCount / 108} Mala(s)! Radhe Radhe 🙏`);
+      if (!achievements.includes("MalaCompleted")) {
+        setAchievements([...achievements, "MalaCompleted"]);
+      }
+    }
+
+    // 🔥 Streak logic
+    if (lastTapDate === today) {
+      // same day → continue
+    } else {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yestStr = yesterday.toISOString().split("T")[0];
+      if (lastTapDate === yestStr) {
+        setStreak(streak + 1);
+      } else {
+        setStreak(1); // reset
+      }
+      setLastTapDate(today);
+    }
+
+    // 🌟 Achievements
+    if (newTotal >= 1000 && !achievements.includes("1000Japas")) {
+      setAchievements([...achievements, "1000Japas"]);
+      setMilestoneMessage("🌸 Achievement Unlocked: Vrindavan Seeker (1000 Japas) 🌸");
+    }
 
     setCount(newCount);
     setTotalCount(newTotal);
@@ -332,6 +359,12 @@ export default function App() {
 
           <Text style={styles.hindiLabel}>{t.radheKrishna}</Text>
 
+          {/* Progress bar for Mala */}
+          <View style={styles.progressBar}>
+            <View style={{ width: `${(count % 108) / 108 * 100}%`, height: 10, backgroundColor: "#FF6B35", borderRadius: 10 }} />
+          </View>
+          <Text style={{ fontSize: 14, marginTop: 5 }}>Mala Progress: {count % 108}/108</Text>
+
           {/* Divine Tap Button */}
           <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <TouchableOpacity style={styles.tapButton} onPress={onTap} activeOpacity={0.8}>
@@ -343,6 +376,16 @@ export default function App() {
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
+
+          {/* Milestone Popup */}
+          {milestoneMessage ? (
+            <View style={styles.milestonePopup}>
+              <Text style={styles.milestoneText}>{milestoneMessage}</Text>
+              <TouchableOpacity onPress={() => setMilestoneMessage("")}>
+                <Text style={{ color: "blue", marginTop: 5 }}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
 
         {/* Menu Button */}
@@ -983,5 +1026,30 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: isTablet ? 16 : 14,
     fontWeight: 'bold',
+  },
+  milestonePopup: {
+    position: "absolute",
+    bottom: 120,
+    backgroundColor: "white",
+    padding: 15,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+    alignItems: "center",
+  },
+  milestoneText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#8B4513",
+    textAlign: "center",
+  },
+  progressBar: {
+    width: "80%",
+    height: 10,
+    backgroundColor: "#eee",
+    borderRadius: 10,
+    marginTop: 10,
   },
 });
