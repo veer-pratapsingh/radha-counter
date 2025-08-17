@@ -305,6 +305,9 @@ export default function App() {
       setCount(0);
       setTotalCount(0);
       setHistory({});
+      setStreak(0);
+      setLastTapDate("");
+      setAchievements([]);
       setMenuVisible(false);
     } catch (e) {
       console.log('Error resetting data', e);
@@ -653,8 +656,8 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    paddingTop: isSmallScreen ? screenHeight * 0.005 : screenHeight * 0.01,
-    paddingBottom: isSmallScreen ? 0 : screenHeight * 0.005,
+    paddingTop: screenHeight * 0.02,
+    paddingBottom: screenHeight * 0.01,
     paddingHorizontal: screenWidth * 0.05,
   },
   omContainer: {
@@ -710,10 +713,11 @@ const styles = StyleSheet.create({
   },
   centerArea: { 
     flex: 1, 
-    justifyContent: isSmallScreen ? "space-around" : "space-evenly", 
+    justifyContent: "center", 
     alignItems: "center",
     paddingHorizontal: screenWidth * 0.05,
-    paddingVertical: isSmallScreen ? screenHeight * 0.01 : screenHeight * 0.02,
+    paddingVertical: screenHeight * 0.02,
+    gap: screenHeight * 0.025,
   },
   imageContainer: {
     shadowColor: '#FF6B35',
@@ -1079,7 +1083,9 @@ const styles = StyleSheet.create({
   },
   milestonePopup: {
     position: "absolute",
-    bottom: 120,
+    bottom: screenHeight * 0.15,
+    left: screenWidth * 0.05,
+    right: screenWidth * 0.05,
     backgroundColor: "white",
     padding: 15,
     borderRadius: 10,
@@ -1096,11 +1102,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   progressBar: {
-    width: "80%",
-    height: 10,
+    width: "90%",
+    height: 8,
     backgroundColor: "#eee",
     borderRadius: 10,
-    marginTop: 10,
+    marginVertical: 5,
   },
   achievementsContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
