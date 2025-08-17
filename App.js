@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   Image,
   Modal,
   ScrollView,
-  Button,
+  TextInput,
   Dimensions,
   Animated,
   StatusBar,
+  Vibration,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -34,34 +36,12 @@ const presetGradients = [
 ];
 
 const radhaNames = [
-  "1. राधा",
-  "2. रासेश्वरी",
-  "3. रम्या",
-  "4. कृष्णमत्राधिदेवता",
-  "5. सर्वाद्या",
-  "6. सर्ववंद्या",
-  "7. वृंदावनविहारिणी",
-  "8. वृंदाराधा",
-  "9. रमा",
-  "10. अशेषगोपीमंडलपूजिता",
-  "11. सत्या",
-  "12. सत्यपरा",
-  "13. सत्यभामा",
-  "14. श्रीकृष्णवल्लभा",
-  "15. वृषभानुसुता",
-  "16. गोपी",
-  "17. मूल प्रकृति",
-  "18. ईश्वरी",
-  "19. गान्धर्वा",
-  "20. राधिका",
-  "21. राम्या",
-  "22. रुक्मिणी",
-  "23. परमेश्वरी",
-  "24. परात्परतरा",
-  "25. पूर्णा",
-  "26. पूर्णचन्द्रविमानना",
-  "27. भुक्ति-मुक्तिप्रदा",
-  "28. भवव्याधि-विनाशिनी",
+  "1. राधा", "2. रासेश्वरी", "3. रम्या", "4. कृष्णमत्राधिदेवता", "5. सर्वाद्या",
+  "6. सर्ववंद्या", "7. वृंदावनविहारिणी", "8. वृंदाराधा", "9. रमा", "10. अशेषगोपीमंडलपूजिता",
+  "11. सत्या", "12. सत्यपरा", "13. सत्यभामा", "14. श्रीकृष्णवल्लभा", "15. वृषभानुसुता",
+  "16. गोपी", "17. मूल प्रकृति", "18. ईश्वरी", "19. गान्धर्वा", "20. राधिका",
+  "21. राम्या", "22. रुक्मिणी", "23. परमेश्वरी", "24. परात्परतरा", "25. पूर्णा",
+  "26. पूर्णचन्द्रविमानना", "27. भुक्ति-मुक्तिप्रदा", "28. भवव्याधि-विनाशिनी",
 ];
 
 const languages = {
@@ -168,7 +148,6 @@ export default function App() {
       if (savedHistory) {
         const hist = JSON.parse(savedHistory);
         setHistory(hist);
-        // Always use today's date for current count
         const todayCount = hist[today] || 0;
         setCount(todayCount);
       }
@@ -193,8 +172,6 @@ export default function App() {
     }
   };
 
-  
-
   const onTap = () => {
     Animated.sequence([
       Animated.timing(scaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
@@ -204,14 +181,8 @@ export default function App() {
     const newCount = count + 1;
     const newTotal = totalCount + 1;
     const updatedHistory = { ...history, [today]: newCount };
-
-    // 📿 Check milestone (108 = 1 mala)
-    if (newCount % 108 === 0) {
-      setMilestoneMessage(`🎉 You completed ${newCount / 108} Mala(s)! Radhe Radhe 🙏`);
-      if (!achievements.includes("MalaCompleted")) {
-        setAchievements([...achievements, "MalaCompleted"]);
-      }
-    }
+    let newStreak = streak;
+    let streakNotification = "";
 
     // 🔥 Streak logic
     if (lastTapDate === today) {
@@ -221,17 +192,39 @@ export default function App() {
       yesterday.setDate(yesterday.getDate() - 1);
       const yestStr = yesterday.toISOString().split("T")[0];
       if (lastTapDate === yestStr) {
-        setStreak(streak + 1);
+        newStreak = streak + 1;
+        streakNotification = `🔥 ${newStreak} Day Streak! Keep it up! 🙏`;
       } else {
-        setStreak(1); // reset
+        newStreak = 1; // reset
+        streakNotification = "🔥 New streak started! Day 1 🌟";
       }
+      setStreak(newStreak);
       setLastTapDate(today);
+    }
+
+    // 📿 Check milestone (108 = 1 mala)
+    if (newCount % 108 === 0) {
+      setMilestoneMessage(`🎉 You completed ${newCount / 108} Mala(s)! Radhe Radhe 🙏`);
+      if (!achievements.includes("MalaCompleted")) {
+        setAchievements([...achievements, "MalaCompleted"]);
+      }
+    } else if (streakNotification) {
+      setMilestoneMessage(streakNotification);
     }
 
     // 🌟 Achievements
     if (newTotal >= 1000 && !achievements.includes("1000Japas")) {
       setAchievements([...achievements, "1000Japas"]);
       setMilestoneMessage("🌸 Achievement Unlocked: Vrindavan Seeker (1000 Japas) 🌸");
+    }
+
+    // 🏆 Streak achievements
+    if (newStreak === 7 && !achievements.includes("7DayStreak")) {
+      setAchievements([...achievements, "7DayStreak"]);
+      setMilestoneMessage("🏆 Achievement Unlocked: Weekly Devotee (7 Day Streak)! 🏆");
+    } else if (newStreak === 30 && !achievements.includes("30DayStreak")) {
+      setAchievements([...achievements, "30DayStreak"]);
+      setMilestoneMessage("👑 Achievement Unlocked: Monthly Master (30 Day Streak)! 👑");
     }
 
     setCount(newCount);
@@ -399,8 +392,13 @@ export default function App() {
 
         {/* Divine Menu */}
         <Modal visible={menuVisible} animationType="slide" transparent={true}>
-          <View style={styles.menuOverlay}>
-            <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.menuContainer}>
+          <TouchableOpacity 
+            style={styles.menuOverlay} 
+            activeOpacity={1} 
+            onPress={() => setMenuVisible(false)}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+              <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.menuContainer}>
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.menuHeader}>
                   <Text style={styles.menuTitle}>{t.settings}</Text>
@@ -468,6 +466,66 @@ export default function App() {
                     <Text style={styles.statLabel}>{t.totalCount}:</Text>
                     <Text style={styles.statValue}>{totalCount}</Text>
                   </View>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>🔥 Current Streak:</Text>
+                    <Text style={styles.statValue}>{streak} days</Text>
+                  </View>
+                  <View style={styles.statRow}>
+                    <Text style={styles.statLabel}>🏆 Achievements:</Text>
+                    <Text style={styles.statValue}>{achievements.length}</Text>
+                  </View>
+                </View>
+
+                {/* Progress & Achievements Section */}
+                <View style={styles.progressContainer}>
+                  <Text style={styles.progressTitle}>🎯 Progress & Achievements</Text>
+                  
+                  {/* All Available Achievements */}
+                  <View style={styles.achievementsList}>
+                    <View style={[styles.achievementItem, achievements.includes("MalaCompleted") && styles.achievementUnlocked]}>
+                      <Text style={styles.achievementIcon}>📿</Text>
+                      <View style={styles.achievementContent}>
+                        <Text style={styles.achievementText}>First Mala Completed</Text>
+                        <Text style={styles.achievementDesc}>Complete 108 japas in one session</Text>
+                      </View>
+                      <Text style={styles.achievementStatus}>
+                        {achievements.includes("MalaCompleted") ? "✅" : "🔒"}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.achievementItem, achievements.includes("1000Japas") && styles.achievementUnlocked]}>
+                      <Text style={styles.achievementIcon}>🌸</Text>
+                      <View style={styles.achievementContent}>
+                        <Text style={styles.achievementText}>Vrindavan Seeker</Text>
+                        <Text style={styles.achievementDesc}>Reach 1000 total japas ({totalCount}/1000)</Text>
+                      </View>
+                      <Text style={styles.achievementStatus}>
+                        {achievements.includes("1000Japas") ? "✅" : "🔒"}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.achievementItem, achievements.includes("7DayStreak") && styles.achievementUnlocked]}>
+                      <Text style={styles.achievementIcon}>🏆</Text>
+                      <View style={styles.achievementContent}>
+                        <Text style={styles.achievementText}>Weekly Devotee</Text>
+                        <Text style={styles.achievementDesc}>Maintain 7 day streak</Text>
+                      </View>
+                      <Text style={styles.achievementStatus}>
+                        {achievements.includes("7DayStreak") ? "✅" : "🔒"}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.achievementItem, achievements.includes("30DayStreak") && styles.achievementUnlocked]}>
+                      <Text style={styles.achievementIcon}>👑</Text>
+                      <View style={styles.achievementContent}>
+                        <Text style={styles.achievementText}>Monthly Master</Text>
+                        <Text style={styles.achievementDesc}>Maintain 30 day streak</Text>
+                      </View>
+                      <Text style={styles.achievementStatus}>
+                        {achievements.includes("30DayStreak") ? "✅" : "🔒"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
 
                 {/* Menu Actions */}
@@ -507,8 +565,9 @@ export default function App() {
                   </LinearGradient>
                 </TouchableOpacity>
               </ScrollView>
-            </LinearGradient>
-          </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </TouchableOpacity>
         </Modal>
 
         {/* Divine Calendar */}
@@ -697,12 +756,6 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
-  totalLabel: {
-    fontSize: isSmallScreen ? 10 : (isTablet ? 16 : 12),
-    color: '#8B4513',
-    fontWeight: '500',
-    marginTop: 5,
-  },
   hindiLabel: {
     fontSize: isSmallScreen ? Math.min(screenWidth * 0.06, 20) : (isTablet ? 32 : Math.min(screenWidth * 0.07, 28)),
     color: "#8B4513",
@@ -763,12 +816,6 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: '#FF6B35',
     borderRadius: 2,
-  },
-  menuButtonGradient: {
-    padding: isTablet ? 18 : 15,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   menuOverlay: {
     flex: 1,
@@ -1051,5 +1098,77 @@ const styles = StyleSheet.create({
     backgroundColor: "#eee",
     borderRadius: 10,
     marginTop: 10,
+  },
+  achievementsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 15,
+  },
+  achievementsTitle: {
+    fontSize: isTablet ? 20 : 18,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  achievementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(240, 240, 240, 0.5)',
+    borderRadius: 10,
+    padding: 12,
+    marginVertical: 4,
+  },
+  achievementIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  achievementText: {
+    fontSize: isTablet ? 16 : 14,
+    color: '#8B4513',
+    fontWeight: '600',
+    flex: 1,
+  },
+  noAchievements: {
+    fontSize: isTablet ? 16 : 14,
+    color: '#999',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    padding: 20,
+  },
+  progressContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 15,
+  },
+  progressTitle: {
+    fontSize: isTablet ? 20 : 18,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  achievementsList: {
+    gap: 8,
+  },
+  achievementContent: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  achievementDesc: {
+    fontSize: isTablet ? 12 : 11,
+    color: '#666',
+    marginTop: 2,
+  },
+  achievementStatus: {
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  achievementUnlocked: {
+    backgroundColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: '#FFD700',
+    borderWidth: 1,
   },
 });
