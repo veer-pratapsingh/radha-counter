@@ -1,46 +1,34 @@
 {
   "expo": {
-    "name": "radha-counter",
+    "name": "Radha Counter",
     "slug": "radha-counter",
-    "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFF3E0"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.veer7.radhacounter",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+        "backgroundColor": "#FFF3E0"
+      }
     },
     "web": {
-      "bundler": "metro",
-      "pwa": {
-        "name": "Radha Counter",
-        "themeColor": "#ffffff",
-        "backgroundColor": "#ffffff",
-        "display": "standalone",
-        "orientation": "portrait"
-      }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
-    "extra": {
-      "eas": {
-        "projectId": "025aae0e-77fb-4c57-a60e-c1048d74a0fa"
-      }
-    }
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

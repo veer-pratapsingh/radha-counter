@@ -1,9 +1,10 @@
 [build]
-  command = "npm run build:web"
+  command = "npx expo export -p web"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"
+  EXPO_USE_FAST_RESOLVER = "1"
 
 [[redirects]]
   from = "/*"
