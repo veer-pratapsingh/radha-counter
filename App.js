@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
 import { LinearGradient } from 'expo-linear-gradient';
+import { apiService } from './api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const isTablet = screenWidth > 768;
@@ -66,7 +67,14 @@ const languages = {
     namesTitle: "🌸 श्री राधा रानी के 28 नाम 🌸",
     closeButton: "बंद करें",
     language: "🌐 भाषा",
-    reset: "🔄 सभी डेटा रीसेट करें"
+    reset: "🔄 सभी डेटा रीसेट करें",
+    login: "🔐 लॉगिन",
+    logout: "🚪 लॉगआउट",
+    community: "👥 समुदाय",
+    enterName: "अपना नाम दर्ज करें",
+    todayTotal: "आज का कुल",
+    allTimeTotal: "सभी समय का कुल",
+    communityTitle: "🌸 राधा नाम समुदाय 🌸"
   },
   english: {
     title: "Shri Radha Rani",
@@ -89,7 +97,14 @@ const languages = {
     namesTitle: "🌸 Shri Radha Rani's 28 Names 🌸",
     closeButton: "Close",
     language: "🌐 Language",
-    reset: "🔄 Reset All Data"
+    reset: "🔄 Reset All Data",
+    login: "🔐 Login",
+    logout: "🚪 Logout",
+    community: "👥 Community",
+    enterName: "Enter your name",
+    todayTotal: "Today's Total",
+    allTimeTotal: "All Time Total",
+    communityTitle: "🌸 Radha Naam Community 🌸"
   }
 };
 
@@ -112,13 +127,44 @@ export default function App() {
   const [lastTapDate, setLastTapDate] = useState("");
   const [achievements, setAchievements] = useState([]);
   const [milestoneMessage, setMilestoneMessage] = useState("");
+  // --- LOGIN & COMMUNITY STATES ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [loginVisible, setLoginVisible] = useState(false);
+  const [communityVisible, setCommunityVisible] = useState(false);
+  const [communityData, setCommunityData] = useState([]);
+  const [todayTotal, setTodayTotal] = useState(0);
+  const [allTimeTotal, setAllTimeTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [communityUnsubscribe, setCommunityUnsubscribe] = useState(null);
   const today = new Date().toISOString().split("T")[0];
   const t = languages[language];
 
   useEffect(() => {
     loadData();
     startGlowAnimation();
+    checkLoginStatus();
+    
+    // Cleanup on unmount
+    return () => {
+      if (communityUnsubscribe) {
+        communityUnsubscribe();
+      }
+    };
   }, []);
+
+  const checkLoginStatus = async () => {
+    try {
+      const savedUserName = await AsyncStorage.getItem('userName');
+      if (savedUserName) {
+        setUserName(savedUserName);
+        setIsLoggedIn(true);
+        setupCommunityListener();
+      }
+    } catch (e) {
+      console.log('Error checking login status', e);
+    }
+  };
 
   const startGlowAnimation = () => {
     Animated.loop(
@@ -232,6 +278,11 @@ export default function App() {
     setHistory(updatedHistory);
 
     saveData(updatedHistory, newTotal, bgGradient, imageUri, language);
+    
+    // Sync with Firebase
+    if (isLoggedIn) {
+      syncUserData();
+    }
   };
 
   const pickImage = async () => {
@@ -311,6 +362,50 @@ export default function App() {
       setMenuVisible(false);
     } catch (e) {
       console.log('Error resetting data', e);
+    }
+  };
+
+  const handleLogin = async (name) => {
+    if (name.trim()) {
+      setIsLoading(true);
+      const result = await apiService.loginUser(name.trim());
+      
+      if (result.success) {
+        setUserName(name.trim());
+        setIsLoggedIn(true);
+        setLoginVisible(false);
+        await AsyncStorage.setItem('userName', name.trim());
+        setupCommunityListener();
+      } else {
+        alert('Login failed: ' + result.error);
+      }
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (communityUnsubscribe) {
+      communityUnsubscribe();
+      setCommunityUnsubscribe(null);
+    }
+    setIsLoggedIn(false);
+    setUserName("");
+    await AsyncStorage.removeItem('userName');
+    setMenuVisible(false);
+  };
+
+  const setupCommunityListener = () => {
+    const unsubscribe = apiService.subscribeToCommunityUpdates((data) => {
+      setCommunityData(data.users);
+      setTodayTotal(data.todayTotal);
+      setAllTimeTotal(data.allTimeTotal);
+    });
+    setCommunityUnsubscribe(() => unsubscribe);
+  };
+
+  const syncUserData = async () => {
+    if (isLoggedIn && userName) {
+      await apiService.updateUserJapa(userName, count, totalCount, achievements, streak);
     }
   };
 
@@ -555,6 +650,28 @@ export default function App() {
                   </LinearGradient>
                 </TouchableOpacity>
 
+                {/* Login/Logout Button */}
+                {!isLoggedIn ? (
+                  <TouchableOpacity style={styles.menuButtonLarge} onPress={() => { setLoginVisible(true); setMenuVisible(false); }}>
+                    <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.menuButtonGradient}>
+                      <Text style={styles.menuButtonText}>{t.login}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity style={styles.menuButtonLarge} onPress={() => { setCommunityVisible(true); setMenuVisible(false); }}>
+                      <LinearGradient colors={['#673AB7', '#512DA8']} style={styles.menuButtonGradient}>
+                        <Text style={styles.menuButtonText}>{t.community}</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuButtonLarge} onPress={handleLogout}>
+                      <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.menuButtonGradient}>
+                        <Text style={styles.menuButtonText}>{t.logout}</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </>
+                )}
+
                 <TouchableOpacity style={styles.menuButtonLarge} onPress={resetData}>
                   <LinearGradient colors={['#F44336', '#D32F2F']} style={styles.menuButtonGradient}>
                     <Text style={styles.menuButtonText}>{t.reset}</Text>
@@ -618,6 +735,66 @@ export default function App() {
               </Text>
             </View>
             <TouchableOpacity style={styles.closeButton} onPress={() => setCalendarVisible(false)}>
+              <LinearGradient colors={['#FF5722', '#F44336']} style={styles.closeButtonGradient}>
+                <Text style={styles.closeButtonText}>{t.closeButton}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </Modal>
+
+        {/* Login Modal */}
+        <Modal visible={loginVisible} animationType="fade" transparent={true}>
+          <View style={styles.centeredView}>
+            <View style={styles.loginModalView}>
+              <Text style={styles.loginTitle}>🙏 {t.login} 🙏</Text>
+              <TextInput
+                style={styles.nameInput}
+                placeholder={t.enterName}
+                onSubmitEditing={(e) => handleLogin(e.nativeEvent.text)}
+                autoFocus
+                editable={!isLoading}
+              />
+              {isLoading && <Text style={styles.loadingText}>Connecting...</Text>}
+              <View style={styles.loginButtons}>
+                <TouchableOpacity style={[styles.button, styles.buttonCancel]} onPress={() => setLoginVisible(false)}>
+                  <Text style={styles.textStyle}>{t.close}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Community Modal */}
+        <Modal visible={communityVisible} animationType="slide" transparent={false}>
+          <LinearGradient colors={['#FFF8E1', '#FFFFFF']} style={styles.communityContainer}>
+            <View style={styles.communityHeader}>
+              <Text style={styles.communityTitle}>{t.communityTitle}</Text>
+              <View style={styles.totalStats}>
+                <View style={styles.statBox}>
+                  <Text style={styles.statNumber}>{todayTotal}</Text>
+                  <Text style={styles.statLabel}>{t.todayTotal}</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Text style={styles.statNumber}>{allTimeTotal}</Text>
+                  <Text style={styles.statLabel}>{t.allTimeTotal}</Text>
+                </View>
+              </View>
+            </View>
+            <ScrollView style={styles.communityList}>
+              {communityData.map((user, index) => (
+                <View key={index} style={[styles.userItem, user.name === userName && styles.currentUser]}>
+                  <View style={styles.userRank}>
+                    <Text style={styles.rankText}>#{index + 1}</Text>
+                  </View>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{user.name}</Text>
+                    <Text style={styles.userStats}>Today: {user.todayJapa} | Total: {user.totalJapa}</Text>
+                  </View>
+                  {user.name === userName && <Text style={styles.youLabel}>You</Text>}
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.closeButton} onPress={() => setCommunityVisible(false)}>
               <LinearGradient colors={['#FF5722', '#F44336']} style={styles.closeButtonGradient}>
                 <Text style={styles.closeButtonText}>{t.closeButton}</Text>
               </LinearGradient>
@@ -1183,5 +1360,164 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 215, 0, 0.3)',
     borderColor: '#FFD700',
     borderWidth: 1,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  loginModalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    minWidth: screenWidth * 0.8,
+  },
+  loginTitle: {
+    fontSize: isTablet ? 24 : 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+    color: '#8B4513',
+  },
+  nameInput: {
+    height: 50,
+    borderColor: '#FF6B35',
+    borderWidth: 2,
+    borderRadius: 10,
+    width: '100%',
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    textAlign: 'center',
+    fontSize: 18,
+  },
+  loginButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+    marginHorizontal: 10,
+    paddingHorizontal: 20,
+  },
+  buttonCancel: {
+    backgroundColor: '#FF6B35',
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  communityContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  communityHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: screenHeight * 0.05,
+  },
+  communityTitle: {
+    fontSize: isTablet ? 28 : 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#8B4513",
+    marginBottom: 20,
+  },
+  totalStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  statBox: {
+    backgroundColor: 'rgba(255, 107, 53, 0.1)',
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    minWidth: screenWidth * 0.35,
+  },
+  statNumber: {
+    fontSize: isTablet ? 32 : 28,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+  },
+  statLabel: {
+    fontSize: isTablet ? 14 : 12,
+    color: '#8B4513',
+    marginTop: 5,
+  },
+  communityList: {
+    flex: 1,
+    marginVertical: 20,
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  currentUser: {
+    backgroundColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: '#FFD700',
+    borderWidth: 2,
+  },
+  userRank: {
+    backgroundColor: '#FF6B35',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  rankText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: isTablet ? 18 : 16,
+    fontWeight: 'bold',
+    color: '#8B4513',
+  },
+  userStats: {
+    fontSize: isTablet ? 14 : 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  youLabel: {
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  loadingText: {
+    color: '#FF6B35',
+    fontSize: 16,
+    marginBottom: 10,
+    fontStyle: 'italic',
   },
 });
