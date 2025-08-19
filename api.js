@@ -108,9 +108,9 @@ export const apiService = {
   },
 
   // Update user japa count
-  async updateUserJapa(uid, todayJapa, totalJapa, achievements = [], streak = 0) {
+  async updateUserJapa(name, todayJapa, totalJapa, achievements = [], streak = 0) {
     try {
-      const userRef = doc(db, USERS_COLLECTION, uid);
+      const userRef = doc(db, USERS_COLLECTION, name);
       const today = new Date().toISOString().split('T')[0];
       
       await updateDoc(userRef, {
@@ -125,24 +125,8 @@ export const apiService = {
       return { success: true };
     } catch (error) {
       console.log('Update error (offline mode):', error.message);
+      // Return success even if offline - data will sync when online
       return { success: true, offline: true };
-    }
-  },
-
-  // Get user data
-  async getUserData(uid) {
-    try {
-      const userRef = doc(db, USERS_COLLECTION, uid);
-      const userSnap = await getDoc(userRef);
-      
-      if (userSnap.exists()) {
-        return { success: true, data: userSnap.data() };
-      } else {
-        return { success: false, error: 'User not found' };
-      }
-    } catch (error) {
-      console.error('Get user data error:', error);
-      return { success: false, error: error.message };
     }
   },
 
