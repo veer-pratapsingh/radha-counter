@@ -128,59 +128,42 @@ export default function App() {
   const [achievements, setAchievements] = useState([]);
   const [milestoneMessage, setMilestoneMessage] = useState("");
   // --- LOGIN & COMMUNITY STATES ---
-  const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [loginVisible, setLoginVisible] = useState(false);
   const [communityVisible, setCommunityVisible] = useState(false);
   const [communityData, setCommunityData] = useState([]);
   const [todayTotal, setTodayTotal] = useState(0);
   const [allTimeTotal, setAllTimeTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [communityUnsubscribe, setCommunityUnsubscribe] = useState(null);
-  const [authUnsubscribe, setAuthUnsubscribe] = useState(null);
   const today = new Date().toISOString().split("T")[0];
   const t = languages[language];
 
   useEffect(() => {
     loadData();
     startGlowAnimation();
-    setupAuthListener();
+    checkLoginStatus();
     
     // Cleanup on unmount
     return () => {
       if (communityUnsubscribe) {
         communityUnsubscribe();
       }
-      if (authUnsubscribe) {
-        authUnsubscribe();
-      }
     };
   }, []);
 
-  const setupAuthListener = () => {
-    const unsubscribe = apiService.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
+  const checkLoginStatus = async () => {
+    try {
+      const savedUserName = await AsyncStorage.getItem('userName');
+      if (savedUserName) {
+        setUserName(savedUserName);
         setIsLoggedIn(true);
-        
-        // Load user data from Firestore
-        const result = await apiService.getUserData(firebaseUser.uid);
-        if (result.success) {
-          loadUserData(result.data);
-        }
-        
         setupCommunityListener();
-      } else {
-        setUser(null);
-        setIsLoggedIn(false);
-        // Reset all data on logout
-        setCount(0);
-        setTotalCount(0);
-        setAchievements([]);
-        setStreak(0);
-        setLastTapDate("");
       }
-    });
-    setAuthUnsubscribe(() => unsubscribe);
+    } catch (e) {
+      console.log('Error checking login status', e);
+    }
   };
 
   const startGlowAnimation = () => {
@@ -382,14 +365,22 @@ export default function App() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    const result = await apiService.signInWithGoogle();
-    
-    if (!result.success) {
-      alert('Login failed: ' + result.error);
+  const handleLogin = async (name) => {
+    if (name.trim()) {
+      setIsLoading(true);
+      const result = await apiService.loginUser(name.trim());
+      
+      if (result.success) {
+        setUserName(name.trim());
+        setIsLoggedIn(true);
+        setLoginVisible(false);
+        await AsyncStorage.setItem('userName', name.trim());
+        setupCommunityListener();
+      } else {
+        alert('Login failed: ' + result.error);
+      }
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleLogout = async () => {
@@ -397,11 +388,10 @@ export default function App() {
       communityUnsubscribe();
       setCommunityUnsubscribe(null);
     }
-    
-    const result = await apiService.signOut();
-    if (result.success) {
-      setMenuVisible(false);
-    }
+    setIsLoggedIn(false);
+    setUserName("");
+    await AsyncStorage.removeItem('userName');
+    setMenuVisible(false);
   };
 
   const setupCommunityListener = () => {
@@ -414,18 +404,8 @@ export default function App() {
   };
 
   const syncUserData = async () => {
-    if (user && user.uid) {
-      await apiService.updateUserJapa(user.uid, count, totalCount, achievements, streak);
-    }
-  };
-
-  const loadUserData = async (userData) => {
-    if (userData) {
-      setCount(userData.todayJapa || 0);
-      setTotalCount(userData.totalJapa || 0);
-      setAchievements(userData.achievements || []);
-      setStreak(userData.streak || 0);
-      setLastTapDate(userData.lastActive || "");
+    if (isLoggedIn && userName) {
+      await apiService.updateUserJapa(userName, count, totalCount, achievements, streak);
     }
   };
 
@@ -672,18 +652,13 @@ export default function App() {
 
                 {/* Login/Logout Button */}
                 {!isLoggedIn ? (
-                  <TouchableOpacity style={styles.menuButtonLarge} onPress={() => { handleGoogleLogin(); setMenuVisible(false); }} disabled={isLoading}>
-                    <LinearGradient colors={['#4285F4', '#34A853']} style={styles.menuButtonGradient}>
-                      <Text style={styles.menuButtonText}>
-                        {isLoading ? 'Connecting...' : '🔐 Login with Google'}
-                      </Text>
+                  <TouchableOpacity style={styles.menuButtonLarge} onPress={() => { setLoginVisible(true); setMenuVisible(false); }}>
+                    <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.menuButtonGradient}>
+                      <Text style={styles.menuButtonText}>{t.login}</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 ) : (
                   <>
-                    <View style={styles.userInfo}>
-                      <Text style={styles.welcomeText}>Welcome, {user?.displayName}!</Text>
-                    </View>
                     <TouchableOpacity style={styles.menuButtonLarge} onPress={() => { setCommunityVisible(true); setMenuVisible(false); }}>
                       <LinearGradient colors={['#673AB7', '#512DA8']} style={styles.menuButtonGradient}>
                         <Text style={styles.menuButtonText}>{t.community}</Text>
@@ -767,20 +742,27 @@ export default function App() {
           </LinearGradient>
         </Modal>
 
-        {/* Login Overlay for non-logged users */}
-        {!isLoggedIn && (
-          <View style={styles.loginOverlay}>
-            <View style={styles.loginCard}>
-              <Text style={styles.loginTitle}>🙏 श्री राधे 🙏</Text>
-              <Text style={styles.loginSubtitle}>Join the divine community</Text>
-              <TouchableOpacity style={styles.googleLoginButton} onPress={handleGoogleLogin} disabled={isLoading}>
-                <Text style={styles.googleLoginText}>
-                  {isLoading ? 'Connecting...' : '🔐 Continue with Google'}
-                </Text>
-              </TouchableOpacity>
+        {/* Login Modal */}
+        <Modal visible={loginVisible} animationType="fade" transparent={true}>
+          <View style={styles.centeredView}>
+            <View style={styles.loginModalView}>
+              <Text style={styles.loginTitle}>🙏 {t.login} 🙏</Text>
+              <TextInput
+                style={styles.nameInput}
+                placeholder={t.enterName}
+                onSubmitEditing={(e) => handleLogin(e.nativeEvent.text)}
+                autoFocus
+                editable={!isLoading}
+              />
+              {isLoading && <Text style={styles.loadingText}>Connecting...</Text>}
+              <View style={styles.loginButtons}>
+                <TouchableOpacity style={[styles.button, styles.buttonCancel]} onPress={() => setLoginVisible(false)}>
+                  <Text style={styles.textStyle}>{t.close}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        )}
+        </Modal>
 
         {/* Community Modal */}
         <Modal visible={communityVisible} animationType="slide" transparent={false}>
@@ -799,16 +781,16 @@ export default function App() {
               </View>
             </View>
             <ScrollView style={styles.communityList}>
-              {communityData.map((userData, index) => (
-                <View key={index} style={[styles.userItem, userData.uid === user?.uid && styles.currentUser]}>
+              {communityData.map((user, index) => (
+                <View key={index} style={[styles.userItem, user.name === userName && styles.currentUser]}>
                   <View style={styles.userRank}>
                     <Text style={styles.rankText}>#{index + 1}</Text>
                   </View>
-                  <View style={styles.userInfoContainer}>
-                    <Text style={styles.userName}>{userData.name}</Text>
-                    <Text style={styles.userStats}>Today: {userData.todayJapa} | Total: {userData.totalJapa}</Text>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{user.name}</Text>
+                    <Text style={styles.userStats}>Today: {user.todayJapa} | Total: {user.totalJapa}</Text>
                   </View>
-                  {userData.uid === user?.uid && <Text style={styles.youLabel}>You</Text>}
+                  {user.name === userName && <Text style={styles.youLabel}>You</Text>}
                 </View>
               ))}
             </ScrollView>
